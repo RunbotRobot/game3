@@ -26,6 +26,7 @@ export async function upheave(g) {
     system: 'You redesign a text game between chapters. You reply with one JSON object and nothing else.',
     user: upheavalPrompt(g),
     temperature: 1.15,
+    onNotice: (m) => g.ui.system(m),
   });
 
   const era = g.state.era;

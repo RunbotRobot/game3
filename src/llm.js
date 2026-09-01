@@ -7,15 +7,28 @@ export const PROVIDERS = {
   gemini: {
     label: 'Google Gemini (free tier)',
     keyUrl: 'https://aistudio.google.com/apikey',
-    defaultModel: 'gemini-2.5-flash',
+    defaultModel: 'gemini-3.6-flash',
     async listModels(key) {
-      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(key)}&pageSize=200`);
-      if (!r.ok) throw new Error(await describe(r));
-      const j = await r.json();
-      return (j.models || [])
-        .filter((m) => (m.supportedGenerationMethods || []).includes('generateContent'))
-        .map((m) => m.name.replace(/^models\//, ''))
-        .filter((n) => !/embedding|aqa|imagen|veo|tts/i.test(n));
+      // Paginated, and the capability field has moved once already
+      // (supportedGenerationMethods -> supportedActions), so accept either and
+      // never filter down to nothing: an empty dropdown is worse than a noisy one.
+      const models = [];
+      let pageToken = '';
+      for (let page = 0; page < 6; page++) {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(key)}&pageSize=200`
+          + (pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : '');
+        const r = await fetch(url);
+        if (!r.ok) throw new Error(await describe(r));
+        const j = await r.json();
+        models.push(...(j.models || []));
+        pageToken = j.nextPageToken || '';
+        if (!pageToken) break;
+      }
+      const names = models
+        .map((m) => ({ id: String(m.name || '').replace(/^models\//, ''), methods: m.supportedGenerationMethods || m.supportedActions || [] }))
+        .filter((m) => m.id && !/embedding|aqa|imagen|veo|tts|image-generation/i.test(m.id));
+      const generative = names.filter((m) => m.methods.some((x) => /generateContent|generateInteraction|interactions/i.test(x)));
+      return (generative.length ? generative : names).map((m) => m.id);
     },
     async complete({ key, model, system, user, temperature }) {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(key)}`;
@@ -136,20 +149,59 @@ async function describe(r) {
 }
 
 /** Ask the current provider for one JSON object. Retries once on a parse failure. */
-export async function ask({ state, system, user, temperature }) {
+export async function ask({ state, system, user, temperature, onNotice }) {
   const provider = PROVIDERS[state.settings.provider] || PROVIDERS.local;
   const key = getApiKey();
   if (!key && provider !== PROVIDERS.local) throw new Error('no API key set — open ⚙ settings');
-  const model = state.settings.model || provider.defaultModel;
-  const opts = { key, model, system, user, temperature: temperature ?? state.settings.temperature ?? 1 };
+  let model = state.settings.model || provider.defaultModel;
+  const base = { key, system, user, temperature: temperature ?? state.settings.temperature ?? 1 };
 
   let last;
-  for (let attempt = 0; attempt < 2; attempt++) {
-    const raw = await provider.complete(attempt === 0 ? opts
-      : { ...opts, user: `${user}\n\nYour previous reply was not valid JSON. Reply with the JSON object only.` });
-    try { return extractJson(raw); } catch (e) { last = e; }
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const raw = await provider.complete({
+        ...base, model,
+        user: attempt === 0 ? user
+          : `${user}\n\nYour previous reply was not valid JSON. Reply with the JSON object only.`,
+      });
+      return extractJson(raw);
+    } catch (e) {
+      last = e;
+      // Providers retire model ids without warning. Rather than stranding a save
+      // mid-playthrough, ask the provider what it has now and carry on.
+      if (isRetiredModel(e) && provider.listModels) {
+        const replacement = await rediscover(provider, key).catch(() => null);
+        if (replacement && replacement !== model) {
+          model = replacement;
+          state.settings.model = replacement;
+          onNotice?.(`⟡ "${e.message.match(/models\/([\w.-]+)/)?.[1] || 'that model'}" is gone; speaking through ${replacement} now.`);
+          continue;
+        }
+      }
+      if (!/JSON/i.test(e.message || '')) throw e;   // only reprompt on parse failures
+    }
   }
   throw last;
+}
+
+const isRetiredModel = (e) =>
+  /404|not found|no longer available|is not supported|deprecat/i.test(e?.message || '');
+
+async function rediscover(provider, key) {
+  return pickBestModel(await provider.listModels(key));
+}
+
+/** Prefer the newest plain "flash"-class model: fast, cheap, and on the free tier. */
+export function pickBestModel(list) {
+  const score = (id) => {
+    let n = 0;
+    if (/flash/i.test(id)) n += 100;
+    if (/lite|thinking|preview|exp|tuning|latest|-8b/i.test(id)) n -= 40;
+    if (/pro/i.test(id)) n += 20;
+    const version = parseFloat((id.match(/(\d+(?:\.\d+)?)/) || [])[1] || '0');
+    return n + Math.min(version, 99);
+  };
+  return [...list].sort((a, b) => score(b) - score(a))[0] || null;
 }
 
 /** Models wrap JSON in prose, fences, or trailing commas. Be forgiving. */

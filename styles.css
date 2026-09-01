@@ -75,6 +75,8 @@ button:disabled { opacity: .4; cursor: default; }
 button.hot { border-color: var(--accent); color: var(--accent); animation: hot-pulse 2.2s ease-in-out infinite; }
 @keyframes hot-pulse { 50% { background: color-mix(in oklab, var(--accent) 16%, transparent); } }
 
+#btn-reload { border-color: var(--accent); color: var(--accent); animation: hot-pulse 2.2s ease-in-out infinite; }
+
 #drift-rail { height: 2px; background: var(--edge); flex: none; }
 #drift-fill {
   height: 100%; width: 0%; background: var(--accent);

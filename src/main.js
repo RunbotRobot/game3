@@ -4,7 +4,7 @@ import { systemPrompt, turnPrompt } from './prompt.js';
 import { createUI } from './ui/index.js';
 import { MECHANICS, install, uninstall, rehydrate, collect } from './mechanics/index.js';
 import { addPressure, upheave } from './director.js';
-import { tick, openEvolveModal, openSettingsModal } from './evolve.js';
+import { tick, openEvolveModal, openSettingsModal, watchForRewrites } from './evolve.js';
 
 const OPENING = '(begin — open somewhere specific and strange, establish who I am in one clause, explain nothing)';
 
@@ -37,6 +37,7 @@ async function submit(input, { silent = false } = {}) {
       state: g.state,
       system: systemPrompt(g),
       user: turnPrompt(g, text),
+      onNotice: (m) => g.ui.system(m),
     });
 
     const narration = String(result.narration || result.text || '').trim();
@@ -128,6 +129,7 @@ function boot() {
   }, 5000);
 
   window.addEventListener('beforeunload', () => g.save());
+  watchForRewrites(g);
 
   // Always playable on first load: with no key, fall back to the offline engine
   // rather than opening on an error.

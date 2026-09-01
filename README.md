@@ -34,7 +34,13 @@ engine is deliberately stupid. Open **⚙ → provider** and pick one:
 | **offline** | — | No network. Procedural nonsense, for testing the engine. |
 
 Hit **list models** in settings to pull the live model list from whichever provider
-you picked, so you never have to guess a model id.
+you picked, so you never have to guess a model id — it fills itself in automatically
+when you open settings with a key already saved.
+
+Providers retire model ids without warning. If the one you are on disappears
+mid-playthrough, the game asks the provider what it has now, picks the closest
+equivalent, retries the turn, and tells you it did — you do not lose the turn or
+the save.
 
 Your key is kept in `localStorage` in your browser and sent only to that provider.
 This is a personal, local toy — don't host it publicly with a key in it.
@@ -50,6 +56,16 @@ This is a personal, local toy — don't host it publicly with a key in it.
   starts glowing after an hour of play.
 - Everything autosaves to `localStorage`; ⚙ can export/import a save as JSON.
 
+## Playing while it is being rewritten
+
+You can. The page runs entirely from files already loaded, so edits landing in the
+repo cannot disturb a session in progress, and every turn autosaves.
+
+When you `git pull` a rewrite, the running game notices within a minute and a
+**rewritten ⟳** button appears in the header. Reload whenever you reach a good
+moment — mid-scene is fine, but the break reads better between them. Your save
+migrates forward on load.
+
 ## Layout
 
 ```
@@ -59,7 +75,8 @@ src/state.js        save, migrations, and the op language the model mutates the 
 src/llm.js          providers; the only file that knows about HTTP
 src/prompt.js       what the model is told it is
 src/director.js     drift pressure and upheaval
-src/evolve.js       the hourly rewrite nudge, the evolution prompt, settings
+src/evolve.js       the hourly rewrite nudge, the evolution prompt, settings, rewrite watcher
+version.json        bumped on every rewrite; the running game polls it
 src/mechanics/      one file per way of playing — the seam the game changes through
 src/ui/             log, HUD, floating fragments, canvas stage
 ```

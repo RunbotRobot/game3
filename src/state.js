@@ -4,7 +4,7 @@
 
 export const SAVE_KEY = 'game3.save';
 export const KEY_KEY = 'game3.apikey';
-export const STATE_VERSION = 1;
+export const STATE_VERSION = 2;
 
 export function freshState() {
   return {
@@ -38,7 +38,16 @@ export function freshState() {
 // --- migrations -------------------------------------------------------------
 // Append a function per version bump. Never edit an existing one.
 const MIGRATIONS = [
-  // (state) => state   // v1 -> v2 goes here
+  // v1 -> v2: Google retired the gemini-2.x ids for new keys. Clear a pinned one
+  // so the save falls back to the provider's current default instead of 404ing.
+  (s) => {
+    if (s.settings?.provider === 'gemini' && /^gemini-[12]\./.test(s.settings.model || '')) s.settings.model = '';
+    s.meta = s.meta || {};
+    s.meta.evolutions = s.meta.evolutions || [];
+    s.meta.evolutions.push('Model auto-healing: a retired model id is replaced from the live list instead of stranding the save. Added the rewrite watcher.');
+    return s;
+  },
+  // v2 -> v3 goes here
 ];
 
 export function migrate(state) {

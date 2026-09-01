@@ -22,6 +22,13 @@ Work on branch `claude/ai-game-api-tools-jia4zw`.
    called inside try/catch or via `collect()`. Keep it that way.
 5. **Append to `EVOLUTION_LOG.md`** every time, and add the same line to
    `meta.evolutions` in the migration, so the next session knows what has been done.
+6. **Bump `build` in `version.json`** on every push. The player is usually still
+   playing while you work; the running page polls that file and offers them a
+   reload when a rewrite lands. Forget it and they never find out you changed anything.
+7. **Never hardcode a model id as the only path.** Providers retire them mid-playthrough.
+   `ask()` in `src/llm.js` heals a retired id from the live model list — keep that
+   working, and keep `listModels` tolerant (the capability field has already moved
+   from `supportedGenerationMethods` to `supportedActions` once).
 
 ## Adding a mechanic (the usual request)
 

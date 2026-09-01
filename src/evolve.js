@@ -5,9 +5,37 @@
 import { el } from './ui/dom.js';
 import { digest } from './prompt.js';
 import { MECHANICS } from './mechanics/index.js';
+import { pickBestModel } from './llm.js';
 import { freshState } from './state.js';
 
 const REMIND_AFTER = 60 * 60 * 1000;   // one hour of play, not one hour of wall clock
+const WATCH_EVERY = 90 * 1000;
+
+/** Notice when the source under the running page has been rewritten and pulled,
+ *  so a session can be played straight through and reloaded at a good moment
+ *  rather than at whatever moment the push happened to land. */
+export async function watchForRewrites(g, every = WATCH_EVERY) {
+  const read = async () => {
+    const r = await fetch(`./version.json?t=${Date.now()}`, { cache: 'no-store' });
+    if (!r.ok) throw new Error(String(r.status));
+    return (await r.json()).build;
+  };
+
+  let running;
+  try { running = await read(); } catch { return; }   // no version.json: nothing to watch
+
+  const btn = document.querySelector('#btn-reload');
+  btn.addEventListener('click', () => { g.save(); location.reload(); });
+
+  setInterval(async () => {
+    try {
+      const latest = await read();
+      if (latest === running || btn.hidden === false) return;
+      btn.hidden = false;
+      g.ui.system('⟡ the game has been rewritten underneath you. finish what you are doing, then press "rewritten ⟳". your save carries over.');
+    } catch { /* server went away; try again next tick */ }
+  }, every);
+}
 
 export function tick(g, dtMs) {
   const meta = g.state.meta;
@@ -117,6 +145,7 @@ export function openSettingsModal(g, { getApiKey, setApiKey, PROVIDERS }) {
   const models = el('select', { style: { marginTop: '6px' } });
   const discover = el('button', {}, 'list models');
   const note = el('div.hint');
+  models.hidden = true;
 
   const linkFor = (id) => {
     const url = PROVIDERS[id].keyUrl;
@@ -132,15 +161,20 @@ export function openSettingsModal(g, { getApiKey, setApiKey, PROVIDERS }) {
     link.replaceWith(next); link = next;
   });
 
-  discover.addEventListener('click', async () => {
+  async function discoverModels() {
     note.textContent = 'asking…';
     try {
       const list = await PROVIDERS[provider.value].listModels(key.value.trim());
-      models.replaceChildren(...list.map((m) => el('option', { value: m }, m)));
+      if (!list.length) { note.textContent = 'the provider returned no models for this key'; return; }
+      models.replaceChildren(...list.map((m) => el('option', { value: m, selected: m === model.value }, m)));
+      models.hidden = false;
       models.onchange = () => { model.value = models.value; };
-      note.textContent = `${list.length} models available — pick one to fill the box`;
+      note.textContent = `${list.length} models — pick one to fill the box. suggested: ${pickBestModel(list)}`;
+      if (!model.value) model.value = pickBestModel(list);
     } catch (e) { note.textContent = `could not list models: ${e.message}`; }
-  });
+  }
+  discover.addEventListener('click', discoverModels);
+  if (getApiKey() && PROVIDERS[s.provider].keyUrl) discoverModels();
 
   const saveBtn = el('button', {}, 'save');
   saveBtn.addEventListener('click', () => {
