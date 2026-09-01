@@ -5,7 +5,8 @@ const OPS_REFERENCE = `
 {"op":"inc","path":"player.resources.<name>","value":-1}  move a meter
 {"op":"push"/"pull","path":"player.inventory","value":"a rusty key"}
 {"op":"del","path":"world.<anything>"}                    forget something
-{"op":"float","text":"it is behind you","x":0.7,"y":0.3}  pin a fragment loose on the screen (x,y are 0-1)
+{"op":"float","text":"it is behind you","x":0.7,"y":0.3}  pin a fragment loose on the screen (x,y are 0-1;
+                                                          sparingly — one every few turns at most)
 {"op":"install","mechanic":"<id>","config":{}}            add a way of playing
 {"op":"uninstall","mechanic":"<id>"}                      remove one`;
 

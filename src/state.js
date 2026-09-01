@@ -187,6 +187,6 @@ export function applyOps(state, ops = []) {
   return side;
 }
 
-const DEFAULT_TTL = 6;
+const DEFAULT_TTL = 3;
 
 const clamp01 = (n) => Math.min(0.95, Math.max(0.02, Number.isFinite(+n) ? +n : Math.random()));

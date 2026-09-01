@@ -88,6 +88,8 @@ const mechBlurb = (id) => MECHANICS[id]?.blurb || 'something new is running.';
 function boot() {
   g.ui = createUI(g);
   rehydrate(g);
+  // Belt and braces: drop any fragment that has no life left, whatever wrote it.
+  g.state.floaters = g.state.floaters.filter((f) => f.sticky || Number(f.ttl) > 0);
 
   g.ui.renderEra();
   g.ui.renderHud();
@@ -115,6 +117,7 @@ function boot() {
   // Mechanics get first refusal on keys, but never while you are typing.
   window.addEventListener('keydown', (e) => {
     if (e.target.matches('input, textarea, select')) return;
+    if (e.key === 'Escape' && g.state.floaters.length) { g.ui.clearFloaters(); return; }
     for (const id of (g.state.era.mechanics || [])) {
       if (MECHANICS[id]?.keydown?.(g, e)) { e.preventDefault(); return; }
     }

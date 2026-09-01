@@ -35,4 +35,4 @@ if [ "$PULL_EVERY" -gt 0 ]; then
 fi
 
 echo "playing at http://localhost:$PORT"
-exec python3 -m http.server "$PORT"
+exec python3 serve.py "$PORT"

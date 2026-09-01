@@ -70,7 +70,9 @@ unmapped ground costs a turn) are the bar. A new meter is not a new mechanic.
 
 ## Testing before you push
 
-There is no test suite; verify in a real browser.
+There is no test suite; verify in a real browser. Note that anything you change in
+`play.sh` or `serve.py` cannot reach the player through the auto-pull that those files
+implement — say so, and give them the manual command.
 
 ```sh
 python3 -m http.server 8099 &

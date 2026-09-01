@@ -78,6 +78,12 @@ export function createUI(g) {
       floatersEl.replaceChildren();
       for (const f of g.state.floaters) floatersEl.append(makeFloater(g, f));
     },
+    clearFloaters() {
+      g.state.floaters = [];
+      ui.renderFloaters();
+      g.save();
+    },
+
     addFloater(f) {
       g.state.floaters = g.state.floaters.filter((x) => x.id !== f.id);
       g.state.floaters.push(f);

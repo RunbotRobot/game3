@@ -16,3 +16,9 @@ append here so a later session can see what the game has already been.
   read as the thing lurching away when clicked. Fragments now expire after a few turns
   (`ttl`, in turns), drag from where you grab them, and dismiss on a click that did not
   move. The rewrite nudge is `sticky` and stays. Added `play.sh` (serve + auto-pull).
+- **Fix — stale builds.** `play.sh` shipped in the same commit as the floater fix, so it
+  could not have pulled that commit; the reload button was from the previous build and the
+  fix was never fetched. Added `serve.py` (every response `no-store`, so a pulled rewrite
+  cannot be masked by a cached module), the running build id in settings and the console,
+  esc to sweep all fragments, and a boot-time cull of any fragment with no life left.
+  Default fragment lifetime cut from 6 turns to 3.

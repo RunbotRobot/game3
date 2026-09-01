@@ -23,6 +23,8 @@ export async function watchForRewrites(g, every = WATCH_EVERY) {
 
   let running;
   try { running = await read(); } catch { return; }   // no version.json: nothing to watch
+  g.build = running;
+  console.info(`game3 build ${running}`);
 
   const btn = document.querySelector('#btn-reload');
   btn.addEventListener('click', () => { g.save(); location.reload(); });
@@ -211,13 +213,17 @@ export function openSettingsModal(g, { getApiKey, setApiKey, PROVIDERS }) {
     else { wipeBtn.dataset.armed = '1'; wipeBtn.textContent = 'really? everything?'; }
   });
 
+  const sweep = el('button', {}, 'clear fragments');
+  sweep.addEventListener('click', () => { g.ui.clearFloaters(); g.ui.closeModal(); });
+
   g.ui.openModal(
     el('h2', { text: 'settings' }),
+    el('div.hint', { text: `running build ${g.build || 'unknown'} · esc clears floating fragments` }),
     el('div.sub', { text: 'The key lives in this browser only. Nothing is sent anywhere but the provider you pick.' }),
     el('label', { text: 'provider' }), provider, link,
     el('label', { text: 'api key' }), key,
     el('label', { text: 'model' }), model, el('div.row', {}, discover), models, note,
-    el('div.row', {}, saveBtn, exportBtn, importBtn, wipeBtn,
+    el('div.row', {}, saveBtn, sweep, exportBtn, importBtn, wipeBtn,
       el('button', { onClick: () => g.ui.closeModal() }, 'close')),
   );
 }

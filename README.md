@@ -20,6 +20,13 @@ ES modules need HTTP, so `file://` will not work:
 ./play.sh 9000 0     # different port, no auto-pull
 ```
 
+`play.sh` only starts helping once you have pulled it and restarted your server
+with it — the first pull after any change to `play.sh` itself is always by hand:
+
+```sh
+git pull && ./play.sh
+```
+
 The auto-pull is what makes rewrites arrive on their own: it fast-forwards the
 branch, the running page notices `version.json` changed, and the **rewritten ⟳**
 button appears. Nothing touches a session in progress until you press it. It only
@@ -61,6 +68,8 @@ This is a personal, local toy — don't host it publicly with a key in it.
   you for free — only stepping onto unmapped ground spends a turn.
 - **evolve** builds the prompt you paste at Claude to change the source. The button
   starts glowing after an hour of play.
+- Floating fragments last a few turns. Click one to dismiss it, drag to move it,
+  or press **esc** to sweep them all.
 - Everything autosaves to `localStorage`; ⚙ can export/import a save as JSON.
 
 ## Playing while it is being rewritten
@@ -74,6 +83,13 @@ That is what `./play.sh` is for. With it running, the loop is: Claude pushes, yo
 server pulls within a minute, the **rewritten ⟳** button appears in the header, and
 you press it when you reach a good moment. Mid-scene is fine; between scenes reads
 better. Your save migrates forward on load.
+
+**Which build am I actually running?** ⚙ settings shows it, and the console logs
+`game3 build …` on load. If that does not match `version.json` on disk, the page is
+running older code than the server has — reload, or hard-reload (ctrl/cmd-shift-R).
+`serve.py` sends `no-store` on every response so this should not happen; plain
+`python3 -m http.server` sends no cache headers at all and leaves it to the browser's
+heuristics.
 
 Don't keep the same save open in two tabs — last write wins.
 
@@ -89,6 +105,7 @@ src/director.js     drift pressure and upheaval
 src/evolve.js       the hourly rewrite nudge, the evolution prompt, settings, rewrite watcher
 version.json        bumped on every rewrite; the running game polls it
 play.sh             serve + auto-pull
+serve.py            static server that refuses to let the browser cache stale code
 src/mechanics/      one file per way of playing — the seam the game changes through
 src/ui/             log, HUD, floating fragments, canvas stage
 ```
