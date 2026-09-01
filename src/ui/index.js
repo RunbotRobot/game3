@@ -79,9 +79,20 @@ export function createUI(g) {
       for (const f of g.state.floaters) floatersEl.append(makeFloater(g, f));
     },
     addFloater(f) {
+      g.state.floaters = g.state.floaters.filter((x) => x.id !== f.id);
       g.state.floaters.push(f);
-      if (g.state.floaters.length > 14) g.state.floaters.shift();
+      while (g.state.floaters.length > 8) {
+        const oldest = g.state.floaters.findIndex((x) => !x.sticky);
+        g.state.floaters.splice(oldest < 0 ? 0 : oldest, 1);
+      }
       ui.renderFloaters();
+    },
+
+    /** Fragments last a few turns, then let go. Only the rewrite nudge sticks. */
+    ageFloaters() {
+      const before = g.state.floaters.length;
+      g.state.floaters = g.state.floaters.filter((f) => f.sticky || (f.ttl = (f.ttl ?? 0) - 1) > 0);
+      if (g.state.floaters.length !== before) ui.renderFloaters();
     },
 
     // --- modal --------------------------------------------------------------
@@ -99,29 +110,60 @@ export function createUI(g) {
 }
 
 function makeFloater(g, f) {
-  const node = el('div.floater', { text: f.text });
+  const node = el('div.floater', {
+    text: f.text,
+    title: f.sticky ? 'click to dismiss' : 'click to dismiss · drag to move',
+  });
   const place = () => {
     node.style.left = `${f.x * 100}%`;
     node.style.top = `${f.y * 100}%`;
   };
   place();
+
   node.addEventListener('pointerdown', (e) => {
-    node.classList.add('dragging');
+    // Grab offset: without it the box snaps its own corner to the cursor, which
+    // reads as the thing lurching away from you every time you touch it.
+    const box = node.getBoundingClientRect();
+    const grabX = e.clientX - box.left;
+    const grabY = e.clientY - box.top;
+    const from = { x: e.clientX, y: e.clientY };
+    let dragged = false;
+
     node.setPointerCapture(e.pointerId);
+
     const move = (ev) => {
-      f.x = Math.max(0, Math.min(0.95, ev.clientX / window.innerWidth));
-      f.y = Math.max(0, Math.min(0.95, ev.clientY / window.innerHeight));
+      if (!dragged && Math.hypot(ev.clientX - from.x, ev.clientY - from.y) < 4) return;
+      dragged = true;
+      node.classList.add('dragging');
+      f.x = Math.max(0, Math.min(0.95, (ev.clientX - grabX) / window.innerWidth));
+      f.y = Math.max(0, Math.min(0.95, (ev.clientY - grabY) / window.innerHeight));
       place();
     };
-    const up = () => {
+
+    const done = () => {
       node.classList.remove('dragging');
       node.removeEventListener('pointermove', move);
-      g.save();
+      node.removeEventListener('pointerup', done);
+      node.removeEventListener('pointercancel', done);
+      if (node.hasPointerCapture?.(e.pointerId)) node.releasePointerCapture(e.pointerId);
+      if (dragged) g.save();
+      else dismissFloater(g, f, node);   // a click that did not move is a dismissal
     };
+
     node.addEventListener('pointermove', move);
-    node.addEventListener('pointerup', up, { once: true });
+    node.addEventListener('pointerup', done);
+    node.addEventListener('pointercancel', done);
   });
+
   return node;
+}
+
+function dismissFloater(g, f, node) {
+  g.state.floaters = g.state.floaters.filter((x) => x !== f);
+  node.classList.add('leaving');
+  node.addEventListener('animationend', () => node.remove(), { once: true });
+  setTimeout(() => node.remove(), 600);   // in case the animation never fires
+  g.save();
 }
 
 const isHex = (v) => typeof v === 'string' && /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(v.trim());

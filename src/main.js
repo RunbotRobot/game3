@@ -56,6 +56,7 @@ async function submit(input, { silent = false } = {}) {
     for (const n of side.notes) g.ui.system(n);
 
     collect(g, 'afterTurn');
+    g.ui.ageFloaters();
 
     g.state.meta.turns += 1;
     g.state.transcript = g.state.transcript.slice(-120);

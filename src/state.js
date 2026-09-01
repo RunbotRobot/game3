@@ -4,7 +4,7 @@
 
 export const SAVE_KEY = 'game3.save';
 export const KEY_KEY = 'game3.apikey';
-export const STATE_VERSION = 2;
+export const STATE_VERSION = 3;
 
 export function freshState() {
   return {
@@ -47,7 +47,16 @@ const MIGRATIONS = [
     s.meta.evolutions.push('Model auto-healing: a retired model id is replaced from the live list instead of stranding the save. Added the rewrite watcher.');
     return s;
   },
-  // v2 -> v3 goes here
+  // v2 -> v3: floaters had no working lifetime and could not be dismissed, so a
+  // long session accumulated permanent ones. Clear the stuck set; new ones expire.
+  (s) => {
+    s.floaters = [];
+    s.meta = s.meta || {};
+    s.meta.evolutions = s.meta.evolutions || [];
+    s.meta.evolutions.push('Floating fragments now expire after a few turns, drag from where you grab them, and dismiss on click.');
+    return s;
+  },
+  // v3 -> v4 goes here
 ];
 
 export function migrate(state) {
@@ -159,7 +168,8 @@ export function applyOps(state, ops = []) {
           side.float.push({
             id: op.id || `f${Date.now()}${Math.random().toString(36).slice(2, 6)}`,
             text: String(op.text ?? '').slice(0, 200),
-            x: clamp01(op.x), y: clamp01(op.y), ttl: Number(op.ttl) || 0,
+            x: clamp01(op.x), y: clamp01(op.y),
+            ttl: Math.max(1, Math.min(40, Number(op.ttl) || DEFAULT_TTL)),   // in turns
           });
           break;
         case 'unfloat':
@@ -176,5 +186,7 @@ export function applyOps(state, ops = []) {
   }
   return side;
 }
+
+const DEFAULT_TTL = 6;
 
 const clamp01 = (n) => Math.min(0.95, Math.max(0.02, Number.isFinite(+n) ? +n : Math.random()));

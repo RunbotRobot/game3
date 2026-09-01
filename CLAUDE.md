@@ -64,6 +64,9 @@ unmapped ground costs a turn) are the bar. A new meter is not a new mechanic.
 - `src/evolve.js` — the hourly nudge and the evolution prompt itself. Meta.
 - `src/llm.js` — providers. The only file that touches `fetch`.
 - `src/ui/stage.js` — the particle field; `MOTION` maps the model's mood word to physics.
+- `src/ui/index.js` — log, HUD, floating fragments. Fragments are turn-scoped: `ttl` counts
+  down once per completed turn, `sticky` exempts one (only the rewrite nudge uses it).
+  Anything the player can put on screen must also be removable by the player.
 
 ## Testing before you push
 

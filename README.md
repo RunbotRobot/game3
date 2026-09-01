@@ -16,9 +16,16 @@ Single player. No server. No build step.
 ES modules need HTTP, so `file://` will not work:
 
 ```sh
-python3 -m http.server 8099
-# then open http://localhost:8099
+./play.sh            # serves on :8099 and git-pulls every 60s
+./play.sh 9000 0     # different port, no auto-pull
 ```
+
+The auto-pull is what makes rewrites arrive on their own: it fast-forwards the
+branch, the running page notices `version.json` changed, and the **rewritten ⟳**
+button appears. Nothing touches a session in progress until you press it. It only
+fast-forwards, so local edits stop the loop rather than being clobbered — and it
+does mean you are running pushed code without reading it first. `./play.sh 8099 0`
+turns it off, or just use `python3 -m http.server 8099` and pull by hand.
 
 ## Getting a model behind it
 
@@ -61,10 +68,14 @@ This is a personal, local toy — don't host it publicly with a key in it.
 You can. The page runs entirely from files already loaded, so edits landing in the
 repo cannot disturb a session in progress, and every turn autosaves.
 
-When you `git pull` a rewrite, the running game notices within a minute and a
-**rewritten ⟳** button appears in the header. Reload whenever you reach a good
-moment — mid-scene is fine, but the break reads better between them. Your save
-migrates forward on load.
+Claude works in its own throwaway clone in the cloud — it can push, but it cannot
+reach the machine you are playing on, so *something on your side* has to pull.
+That is what `./play.sh` is for. With it running, the loop is: Claude pushes, your
+server pulls within a minute, the **rewritten ⟳** button appears in the header, and
+you press it when you reach a good moment. Mid-scene is fine; between scenes reads
+better. Your save migrates forward on load.
+
+Don't keep the same save open in two tabs — last write wins.
 
 ## Layout
 
@@ -77,6 +88,7 @@ src/prompt.js       what the model is told it is
 src/director.js     drift pressure and upheaval
 src/evolve.js       the hourly rewrite nudge, the evolution prompt, settings, rewrite watcher
 version.json        bumped on every rewrite; the running game polls it
+play.sh             serve + auto-pull
 src/mechanics/      one file per way of playing — the seam the game changes through
 src/ui/             log, HUD, floating fragments, canvas stage
 ```

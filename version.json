@@ -1,4 +1,4 @@
 {
-  "build": "2026-09-01.2",
-  "note": "model auto-healing + rewrite watcher"
+  "build": "2026-09-01.3",
+  "note": "floating fragments expire, drag properly, and dismiss on click"
 }

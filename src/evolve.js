@@ -54,7 +54,7 @@ function nudge(g) {
   g.ui.addFloater({
     id: 'evolve-nudge',
     text: 'something outside the game wants changing',
-    x: 0.06 + Math.random() * 0.2, y: 0.2 + Math.random() * 0.5, ttl: 0,
+    x: 0.06 + Math.random() * 0.2, y: 0.2 + Math.random() * 0.5, sticky: true,
   });
   g.save();
 }

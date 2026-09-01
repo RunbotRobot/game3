@@ -38,6 +38,17 @@ html, body {
 }
 .floater.dragging { cursor: grabbing; }
 @keyframes floater-in { from { opacity: 0; transform: scale(.9); } }
+.floater.leaving { animation: floater-out .28s ease both; pointer-events: none; }
+@keyframes floater-out { to { opacity: 0; transform: scale(.94); filter: blur(2px); } }
+.floater:hover { border-color: color-mix(in oklab, var(--accent) 75%, transparent); }
+.floater::after {
+  content: "×"; position: absolute; top: -7px; right: -7px;
+  width: 15px; height: 15px; line-height: 14px; text-align: center;
+  font-size: 11px; border-radius: 50%;
+  background: var(--bg); border: 1px solid color-mix(in oklab, var(--accent) 45%, transparent);
+  opacity: 0; transition: opacity .15s;
+}
+.floater:hover::after { opacity: 1; }
 
 #shell {
   position: relative; z-index: 1;
