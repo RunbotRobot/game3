@@ -1,0 +1,46 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UNTITLED — a game that forgets what it is</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230b0d10'/%3E%3Ccircle cx='8' cy='8' r='3' fill='%237fd1c1'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="./styles.css">
+
+<canvas id="stage"></canvas>
+<div id="floaters"></div>
+
+<main id="shell">
+  <header id="topbar">
+    <div id="era-plate">
+      <span id="era-index">I</span>
+      <span id="era-name">—</span>
+      <span id="era-tagline"></span>
+    </div>
+    <div id="topbar-actions">
+      <span id="clock" title="time played">0:00</span>
+      <button id="btn-evolve" title="Generate a prompt asking Claude to rewrite the game">evolve</button>
+      <button id="btn-settings" title="Model, API key, saves">⚙</button>
+    </div>
+  </header>
+
+  <div id="drift-rail" title="drift pressure — when it fills, the world upheaves">
+    <div id="drift-fill"></div>
+  </div>
+
+  <section id="body">
+    <div id="log" role="log" aria-live="polite"></div>
+    <aside id="hud"></aside>
+  </section>
+
+  <footer id="composer">
+    <div id="choices"></div>
+    <form id="input-row" autocomplete="off">
+      <span id="prompt-glyph">&gt;</span>
+      <input id="input" type="text" placeholder="what do you do?" autofocus>
+      <button id="btn-send" type="submit">↵</button>
+    </form>
+    <div id="status"></div>
+  </footer>
+</main>
+
+<dialog id="modal"><div id="modal-body"></div></dialog>
+
+<script type="module" src="./src/main.js"></script>
