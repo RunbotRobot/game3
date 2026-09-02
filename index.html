@@ -10,7 +10,8 @@
 <canvas id="stage"></canvas>
 <canvas id="scene3d" hidden></canvas>
 <div id="walk-labels" hidden></div>
-<div id="joystick" hidden><div id="joystick-knob"></div></div>
+<div id="joystick" hidden title="move"><div id="joystick-knob"></div></div>
+<div id="joystick-view" hidden title="look"><div id="joystick-view-knob"></div></div>
 <div id="floaters"></div>
 <div id="rig"></div>
 
@@ -39,21 +40,28 @@
     <span id="goal-text">tap to choose a goal</span>
   </div>
 
-  <section id="body">
-    <div id="log" role="log" aria-live="polite"></div>
-    <aside id="hud"></aside>
-  </section>
+  <div id="log-peek" hidden role="button" tabindex="0" title="read and reply">
+    <span id="log-peek-icon">☰</span>
+    <span id="log-peek-text"></span>
+  </div>
 
-  <footer id="composer">
-    <button id="btn-jump" hidden>↓ new</button>
-    <div id="choices"></div>
-    <form id="input-row" autocomplete="off">
-      <span id="prompt-glyph">&gt;</span>
-      <input id="input" type="text" placeholder="what do you do?" enterkeyhint="send" autocapitalize="sentences" autocorrect="on">
-      <button id="btn-send" type="submit">↵</button>
-    </form>
-    <div id="status"></div>
-  </footer>
+  <div id="log-drawer">
+    <section id="body">
+      <div id="log" role="log" aria-live="polite"></div>
+      <aside id="hud"></aside>
+    </section>
+
+    <footer id="composer">
+      <button id="btn-jump" hidden>↓ new</button>
+      <div id="choices"></div>
+      <form id="input-row" autocomplete="off">
+        <span id="prompt-glyph">&gt;</span>
+        <input id="input" type="text" placeholder="what do you do?" enterkeyhint="send" autocapitalize="sentences" autocorrect="on">
+        <button id="btn-send" type="submit">↵</button>
+      </form>
+      <div id="status"></div>
+    </footer>
+  </div>
 </main>
 
 <dialog id="modal"><div id="modal-body"></div></dialog>

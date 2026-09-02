@@ -114,10 +114,22 @@ future rewrite should be reluctant to remove any of them:
     from its projected on-screen footprint; tapping it shows the `.walk-label` for a few
     seconds. When two hotspots overlap (a big exit marker behind a small prop), the smaller
     one must win the tap — `updateMark()` gives it the higher z-index for exactly this.
-  - **The room has its own pane** (`--scene-h` in `styles.css`, `body.walk-active`), not a
-    full-bleed background behind translucent text. `#shell`'s `padding-top` is what pushes
-    everything below the scene — don't reach for `position:fixed` on individual header
-    pieces to get them out from under it; that undoes the whole point.
+  - **The room is the screen, and text is a drawer, not a permanent slice of it.** A
+    fixed `--scene-h` split was tried first and lost either way it was sized — big enough
+    to read cost too much of the room, small enough to leave the room alone couldn't fit
+    a line. `#log`/`#hud`/`#composer` now live inside `#log-drawer` (`body.walk-active
+    #log-drawer { display: none }`), collapsed to a tap-to-open peek bar (`#log-peek`:
+    icon + latest line) until a real tap opens it as a bottom sheet over the dimmed
+    scene. Below a thin always-visible status strip (topbar/drift/goal/peek), the scene
+    pane's `top`/`height` is set from `--status-h`, and that value is *measured*
+    (`ui.syncStatusHeight()`, via `getBoundingClientRect()` on the status stack — called
+    on boot, on era/goal re-render, and on resize), never a guessed constant: era name
+    length, goal text, and safe-area insets all change the real number, and a hardcoded
+    one has already been wrong twice in this project's history (`--scene-h` itself, and
+    this very `--status-h` on its first cut). Anything that shows inside the drawer
+    (`#hud` included) needs the drawer open to be visible at all — `toggleHud()` opens
+    `log-open` too, in `walk-active` mode, so `#btn-hud` doesn't set a class with nothing
+    rendered behind it.
 - **`mysteries`** (`src/mechanics/mysteries.js`) — the loose-threads ledger. Every
   unexplained fact the story introduces (the 47 tally marks that never got an answer is
   the example that prompted this) must be registered via `world.mysteryOpen.<id>` in the

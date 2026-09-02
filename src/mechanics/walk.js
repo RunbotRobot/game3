@@ -259,7 +259,8 @@ function expandProp(p) {
 
 const AVATAR_RADIUS = 0.4;
 const SPEED = 4.2;       // metres/second
-const TURN_RATE = 2.6;   // radians/second at full stick deflection
+const TURN_RATE = 2.6;         // radians/second at full stick deflection (avatar)
+const CAMERA_TURN_RATE = 3.2;  // radians/second at full stick deflection (look)
 const REVEAL_MS = 3500;
 
 function createScene(g) {
@@ -268,7 +269,8 @@ function createScene(g) {
   if (!renderer) return null;
 
   const overlayEl = document.querySelector('#walk-labels');
-  const joystick = createJoystick();
+  const joystick = createJoystick('#joystick', '#joystick-knob');
+  const viewStick = createJoystick('#joystick-view', '#joystick-view-knob');
   const keys = { up: false, down: false, left: false, right: false };
 
   let running = false;
@@ -379,8 +381,16 @@ function createScene(g) {
       a.x = nx; a.z = nz;
     }
 
-    // Third-person chase camera, smoothed so quick reversals don't snap-spin it.
-    cameraYaw = lerpAngle(cameraYaw, a.heading, Math.min(1, dt * 6));
+    // Third-person chase camera. The right stick free-rotates it around the
+    // avatar (a look, not a move — nothing here ever touches a.heading or
+    // position, so this can't reopen the feedback loop the move stick had);
+    // let go and it re-centers behind whichever way the avatar is facing.
+    const viewMag = Math.hypot(viewStick.vector.x, viewStick.vector.z);
+    if (viewMag > 0.15 && !g.busy) {
+      cameraYaw = wrapAngle(cameraYaw + (viewStick.vector.x / viewMag) * Math.min(1, viewMag) * CAMERA_TURN_RATE * dt);
+    } else {
+      cameraYaw = lerpAngle(cameraYaw, a.heading, Math.min(1, dt * 6));
+    }
     const back = 6.5, height = 4.2;
     const eye = [a.x - Math.sin(cameraYaw) * back, height, a.z + Math.cos(cameraYaw) * back];
     const target = [a.x, 1.1, a.z];
@@ -460,15 +470,25 @@ function createScene(g) {
     document.querySelector('#stage').hidden = true;
     canvas.hidden = false;
     overlayEl.hidden = false;
+    document.querySelector('#log-peek').hidden = false;
     joystick.show();
+    viewStick.show();
     document.body.classList.add('walk-active');
+    // #log-peek just became the status stack's real bottom edge instead of
+    // #goal-bar — measure it now, not on whatever render happens to run next.
+    g.ui.syncStatusHeight();
   }
   function hide() {
     document.querySelector('#stage').hidden = false;
     canvas.hidden = true;
     overlayEl.hidden = true;
+    document.querySelector('#log-peek').hidden = true;
     joystick.hide();
-    document.body.classList.remove('walk-active');
+    viewStick.hide();
+    // Leaving walk mode with the log drawer open would otherwise strand the
+    // player on a "display:none" drawer they have no way to close, since its
+    // own toggle only exists in walk-active CSS.
+    document.body.classList.remove('walk-active', 'log-open');
     for (const m of marks.values()) { m.hotspot.remove(); m.label.remove(); }
     marks.clear();
   }
@@ -502,9 +522,9 @@ function wrapAngle(a) {
 /** A drag-anywhere-on-the-pad thumbstick. Reports a live, normalized {x,z} —
  *  screen-relative (up/down/left/right on the pad); tick() rotates it into
  *  world space by the current camera yaw. */
-function createJoystick() {
-  const pad = document.querySelector('#joystick');
-  const knob = document.querySelector('#joystick-knob');
+function createJoystick(padSel, knobSel) {
+  const pad = document.querySelector(padSel);
+  const knob = document.querySelector(knobSel);
   const vector = { x: 0, z: 0 };
   const radius = 42;
 

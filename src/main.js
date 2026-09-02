@@ -109,6 +109,7 @@ function boot() {
   for (const e of g.state.transcript.slice(-8)) {
     if (e.role === 'player') g.ui.player(e.text); else g.ui.narration(e.text);
   }
+  g.ui.renderLogPeek();
 
   document.querySelector('#hud').addEventListener('click', (e) => {
     // Collapsed strip: nothing in it is interactive (.hud-body is hidden), so
@@ -138,10 +139,23 @@ function boot() {
   document.querySelector('#goal-bar').addEventListener('keydown', (e) => {
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); g.ui.editGoal(); }
   });
+
+  // The log drawer (walk-active mode): a peek bar you tap open, same pattern
+  // as #hud's own strip-to-sheet toggle, just for everything text-related.
+  document.querySelector('#log-peek').addEventListener('click', () => g.ui.toggleLogDrawer(true));
+  document.querySelector('#log-peek').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); g.ui.toggleLogDrawer(true); }
+  });
+
   document.addEventListener('pointerdown', (e) => {
-    if (!document.body.classList.contains('hud-open')) return;
-    if (e.target.closest('#hud, #btn-hud')) return;
-    g.ui.toggleHud(false);
+    if (document.body.classList.contains('hud-open') && !e.target.closest('#hud, #btn-hud')) {
+      g.ui.toggleHud(false);
+    }
+    // Tapping the room itself — not a joystick, not a hotspot, not the drawer
+    // or its own peek bar — is "put the reading away and look at the world."
+    if (document.body.classList.contains('log-open') && !e.target.closest('#log-drawer, #log-peek')) {
+      g.ui.toggleLogDrawer(false);
+    }
   });
   document.querySelector('#btn-evolve').addEventListener('click', () => openEvolveModal(g));
   document.querySelector('#btn-settings').addEventListener('click', () =>
@@ -165,6 +179,9 @@ function boot() {
     if (!document.hidden && dt < 30000) tick(g, dt);
   }, 5000);
 
+  // Orientation change / URL bar show-hide can change the real height of the
+  // always-visible status stack the 3D pane is measured against.
+  window.addEventListener('resize', () => g.ui.syncStatusHeight());
   window.addEventListener('beforeunload', () => g.save());
   watchForRewrites(g);
 

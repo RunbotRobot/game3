@@ -71,11 +71,10 @@ This is a personal, local toy — don't host it publicly with a key in it.
 ## On a phone
 
 This is built to be played on one. The 3D room and its thumbstick are the primary way
-you move — no keyboard needed. The HUD is a scrolling strip above the composer — several
-mechanics live in it, so it is never hidden — and the **▤** button pulls it up into a
-full sheet you can play from. The composer does not steal focus after a turn, so the
-keyboard stays down until you ask for it. Add it to your home screen and it runs
-fullscreen.
+you move — no keyboard needed. Reading and typing live behind the peek bar under the
+goal bar; tap it (or the **▤** button, for the HUD specifically) to pull up the full
+sheet. The composer does not steal focus after a turn, so the keyboard stays down until
+you ask for it. Add it to your home screen and it runs fullscreen.
 
 The server has to run somewhere your phone can reach it — a machine on the same
 network (`./play.sh`, then browse to that machine's LAN address), or any static host.
@@ -90,15 +89,18 @@ bypassed *before* reloading, so the reload starts from fresh copies.
 
 ## Playing
 
-- **The room has its own pane**, top of the screen, separate from the log below it —
-  not a background behind the text. You have a body in it: a small figure, with a face
-  on the side it's walking toward and hair on the side facing you, standing on a real,
-  lit floor among objects that are actually shaped like what they are (a table has legs,
-  a tree has a trunk and a canopy), not undifferentiated blocks.
-- **Steer with the thumbstick**, lower-left, within the room's pane. Left/right turns
-  you; up/down walks forward or back along wherever you're currently facing — so holding
-  "up" keeps going the way you're already pointed, it doesn't reset to some fixed
-  direction. WASD/arrow keys work too, for testing at a desk.
+- **The room is the screen.** You have a body in it: a small figure, with a face on the
+  side it's walking toward and hair on the side facing you, standing on a real, lit floor
+  among objects that are actually shaped like what they are (a table has legs, a tree has
+  a trunk and a canopy), not undifferentiated blocks. Text — the log, HUD and composer —
+  isn't a permanent slice of the screen anymore; it collapses into a peek bar under the
+  goal bar (an icon and the latest line) and opens into a full sheet when you tap it.
+  Tapping the room again, or a real action (sending a line, picking a choice), closes it.
+- **Steer with the left thumbstick.** Left/right turns you; up/down walks forward or back
+  along wherever you're currently facing — so holding "up" keeps going the way you're
+  already pointed, it doesn't reset to some fixed direction. **The right thumbstick looks**
+  around independently, without turning your body — let go and it re-centers behind
+  whichever way you're facing. WASD/arrow keys work too, for testing at a desk.
 - **Tap something to find out what it is.** Labels are hidden by default — the shape is
   the first thing you're told, the name only when you ask for it. Tap an object (or the
   glowing floor marker at a doorway) and its label appears for a few seconds.

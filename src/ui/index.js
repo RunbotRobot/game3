@@ -10,6 +10,7 @@ export function createUI(g) {
   const stage = createStage(g, $('#stage'));
 
   const jumpEl = $('#btn-jump');
+  const logPeekEl = $('#log-peek'), logPeekTextEl = $('#log-peek-text');
 
   // Stick to the bottom only while the player is already there. Scrolling up is
   // how you read at your own speed, and yanking the view back down mid-paragraph
@@ -40,7 +41,8 @@ export function createUI(g) {
   });
 
   function entry(cls, node) {
-    logEl.append(el(`div.entry.${cls}`, {}, node));
+    const entryEl = el(`div.entry.${cls}`, {}, node);
+    logEl.append(entryEl);
     // Keep the DOM bounded on a long session; the save keeps the real history.
     // Trimming from the top shifts everything up, so give the reader their place back.
     while (logEl.childElementCount > 220) {
@@ -51,6 +53,10 @@ export function createUI(g) {
     }
     if (pinned) scroll();
     else { unread += 1; showJump(); }
+    // Single choke point for every kind of log line, so the peek bar (the one
+    // sliver of prose visible while the drawer is closed) always shows the
+    // latest one without every caller having to remember to update it.
+    if (logPeekTextEl) logPeekTextEl.textContent = entryEl.textContent.trim();
   }
 
   const ui = {
@@ -99,6 +105,7 @@ export function createUI(g) {
       ui.applyPalette(era.palette);
       stage.setMotion(era.motion);
       inputEl.placeholder = active(g).map((m) => m.composer?.(g)?.placeholder).find(Boolean) || 'what do you do?';
+      ui.syncStatusHeight();   // era name length changes the status stack's real height
     },
 
     applyPalette(p) {
@@ -113,6 +120,41 @@ export function createUI(g) {
     toggleHud(force) {
       const open = force ?? !document.body.classList.contains('hud-open');
       document.body.classList.toggle('hud-open', open);
+      // #hud lives inside #log-drawer now (walk-active mode), which is
+      // display:none until opened — setting hud-open alone would toggle a
+      // class with nothing visible behind it. Bring the drawer along.
+      if (open && document.body.classList.contains('walk-active')) {
+        document.body.classList.add('log-open');
+      }
+    },
+
+    // --- the log drawer (walk-active mode only) ------------------------------
+    // The room takes the screen; log/HUD/composer collapse to a peek bar
+    // (icon + the latest line, always visible) and open into a full sheet on
+    // tap, same drawer pattern as #hud's own strip-to-sheet toggle.
+    toggleLogDrawer(force) {
+      const open = force ?? !document.body.classList.contains('log-open');
+      document.body.classList.toggle('log-open', open);
+      if (open) document.body.classList.remove('hud-open');   // one sheet at a time
+    },
+
+    /** Seed the peek bar from whatever's already in the log — used at boot,
+     *  since entry() only updates it for lines added after that point. */
+    renderLogPeek() {
+      const last = logEl.lastElementChild;
+      if (last && logPeekTextEl) logPeekTextEl.textContent = last.textContent.trim();
+    },
+
+    /** Measures the real bottom edge of the always-visible status stack
+     *  (topbar/drift/goal/peek) and stores it as --status-h, so the 3D pane
+     *  below it starts exactly where that content actually ends — not at a
+     *  guessed pixel count, the same mistake a fixed --scene-h made once
+     *  already. Era name length, goal text, safe-area insets and font
+     *  rendering all change this in ways a constant can't track. */
+    syncStatusHeight() {
+      const anchor = logPeekEl.hidden ? $('#goal-bar') : logPeekEl;
+      const bottom = anchor.getBoundingClientRect().bottom;
+      if (bottom > 0) document.documentElement.style.setProperty('--status-h', `${Math.ceil(bottom)}px`);
     },
 
     renderDrift() {
@@ -135,6 +177,7 @@ export function createUI(g) {
       const text = String(g.state.player.goal || '').trim();
       bar.classList.toggle('empty', !text);
       $('#goal-text').textContent = text || 'tap to choose a goal';
+      ui.syncStatusHeight();
     },
 
     editGoal() {

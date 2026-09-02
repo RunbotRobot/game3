@@ -133,3 +133,27 @@ append here so a later session can see what the game has already been.
   local front through the matrix at several headings and checking it lands on the same
   point `localToWorld` already proved correct — not just checking where a part ends up,
   which is what the previous tests did and why this got through.
+- **The room is the screen now, and a second joystick free-looks.** The fixed `--scene-h`
+  pane from the previous fix reserved ~56vh for the room and left the rest for text —
+  on the player's actual device that was under one visible line of prose; browser chrome
+  eats more of the viewport than a bare height assumption gives credit for, the same
+  lesson the "phone strip was still too tall" fix already taught once, just applied to a
+  much bigger reservation this time. There is no fixed split that wins: big enough to
+  read costs too much of the room, small enough to leave the room alone can't fit a line.
+  So it isn't a split anymore — `#log`, `#hud` and `#composer` collapse into `#log-drawer`,
+  which shows only a tap-to-open peek bar (`#log-peek`: an icon and the latest line,
+  updated from the same `entry()` choke point every kind of log line already goes
+  through) until opened into a full sheet, the same drawer pattern `#hud` already used
+  for its own strip-to-sheet toggle. Closed, the room gets the whole screen below a thin
+  status strip (era/clock, drift rail, goal); the status strip's real height is measured
+  with `getBoundingClientRect()` (`ui.syncStatusHeight()`, called on boot, on era/goal
+  re-render, and on resize) rather than guessed as a constant — the same mistake as
+  `--scene-h`, caught this time before shipping instead of after. Requested alongside it:
+  a second joystick, lower-right, that free-rotates the chase camera independently of
+  the avatar's own heading — released, it re-centers behind whichever way the avatar is
+  facing. It never touches `a.heading` or position, so it can't reopen the feedback loop
+  the movement stick caused earlier in this same file. Caught one more bug testing this:
+  `#btn-hud` set the `hud-open` class fine, but `#hud` now lives inside `#log-drawer`,
+  which is `display:none` until opened — the sheet was toggling with nothing visible
+  behind it. `toggleHud()` now brings the drawer along when opening the HUD in walk-active
+  mode. `STATE_VERSION` 5 → 6, no shape change, logs this entry.

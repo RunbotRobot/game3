@@ -79,30 +79,83 @@ html, body {
      frame. walk.js adds a short one only for the release snap-back. */
 }
 
-/* --- the 3D room gets its own pane, text is secondary --------------------
-   Previously the room was a full-bleed background with the log/HUD/composer
-   floating over it, translucent, the way the particle field still works for
-   text-only eras. For a real walkable room that reads as sharing the game's
-   own text-adventure reflex ("look past the words") instead of a place you
-   actually inhabit — so while `walk` is installed the room takes a fixed pane
-   at the top and the text pane below it is solid, not glass-over-video. */
-:root { --scene-h: min(56vh, calc(100dvh - 260px)); }
+/* The look/view stick: same control, mirrored to the right side, turning the
+   camera around the avatar instead of the avatar itself. */
+#joystick-view {
+  position: fixed; z-index: 3;
+  right: max(18px, env(safe-area-inset-right));
+  bottom: max(160px, 24vh);
+  width: 96px; height: 96px; border-radius: 50%;
+  background: color-mix(in oklab, var(--bg) 55%, transparent);
+  border: 1px solid color-mix(in oklab, var(--fg) 30%, transparent);
+  touch-action: none; -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+#joystick-view-knob {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: 44px; height: 44px; border-radius: 50%;
+  background: color-mix(in oklab, var(--fg) 22%, var(--bg));
+  border: 1px solid color-mix(in oklab, var(--fg) 55%, transparent);
+  pointer-events: none;
+}
+
+/* --- the 3D room is the screen; text is a drawer, not a permanent slice ---
+   First cut of this reserved a fixed ~56vh strip for text below the room.
+   On the player's actual device that left under one line of prose visible —
+   browser chrome eats more than a bare viewport height gives credit for (see
+   the earlier "the phone strip was still too tall" fix; same lesson, this
+   time applied to a much bigger reservation). A FIXED split can't win: big
+   enough to read costs too much of the view, small enough to leave the view
+   alone can't fit a line. So it isn't a split any more — the log, HUD and
+   composer collapse into a peek bar (icon + the latest line) and open into a
+   full sheet on tap, the same drawer pattern #hud already uses for its own
+   detail. Closed, the room gets essentially the whole screen below a slim,
+   always-visible status strip (era/clock, drift rail, goal). */
+/* Placeholder only, for the one frame before JS measures the real thing —
+   see ui.syncStatusHeight(). A constant here was tried and was wrong on the
+   first real device it ran on (era name length, goal text, and safe-area
+   insets all change the real height); don't let this drift into being load-
+   bearing again. */
+:root { --status-h: calc(84px + env(safe-area-inset-top)); }
 
 body.walk-active #scene3d,
-body.walk-active #walk-labels { height: var(--scene-h); }
-
-body.walk-active #joystick { bottom: auto; top: calc(var(--scene-h) - 116px); }
-
-/* #shell's own padding-top pushes EVERYTHING inside it — topbar, goal bar,
-   drift rail, log, HUD, composer — below the scene pane as one group. That's
-   the whole fix: nothing needs its own fixed positioning to get out from
-   under the 3D view; it just isn't drawn there any more. */
-body.walk-active #shell { padding-top: var(--scene-h); }
-body.walk-active #body,
-body.walk-active #composer {
-  background: var(--bg);
+body.walk-active #walk-labels {
+  top: var(--status-h); height: calc(100dvh - var(--status-h));
 }
-body.walk-active #body { border-top: 1px solid var(--edge); }
+
+body.walk-active #joystick,
+body.walk-active #joystick-view {
+  bottom: max(20px, env(safe-area-inset-bottom));
+}
+
+body.walk-active #log-peek {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 4px; margin-top: 2px;
+  font-size: 12px; color: var(--dim); cursor: pointer;
+  border-top: 1px solid var(--edge);
+}
+#log-peek-icon { flex: none; color: var(--accent); font-size: 13px; }
+#log-peek-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Closed: the drawer takes no screen space at all. Open: the same bottom-sheet
+   #hud already uses, just for everything text-related at once — #body and
+   #composer stay in normal flex flow *inside* #log-drawer (composer sized by
+   its own content, log gets whatever's left), so nothing has to guess the
+   other's height the way the scene pane's fixed split did. */
+body.walk-active #log-drawer { display: none; }
+body.walk-active.log-open #log-drawer {
+  display: flex; position: fixed; inset: auto 0 0 0; z-index: 6;
+  max-height: 80dvh; background: var(--panel);
+  border-top: 1px solid var(--accent); border-radius: 12px 12px 0 0;
+}
+body.walk-active.log-open #body { padding: 14px 16px 8px; }
+body.walk-active.log-open #composer { padding: 8px 16px calc(12px + env(safe-area-inset-bottom)); }
+/* The room dims but stays visible behind the open drawer, and the joysticks
+   step out of the way rather than fighting for the same taps as the sheet. */
+body.walk-active.log-open #scene3d,
+body.walk-active.log-open #walk-labels { opacity: .35; }
+body.walk-active.log-open #joystick,
+body.walk-active.log-open #joystick-view { display: none; }
 
 /* The apparatus overlay: parts the model places over the scene, touched or
    dragged directly instead of being described and then typed about. */
@@ -233,6 +286,12 @@ button.hot { border-color: var(--accent); color: var(--accent); animation: hot-p
   flex: 1; min-width: 0; font: inherit; font-size: 12.5px; color: var(--fg);
   background: transparent; border: 0; border-bottom: 1px solid var(--accent); outline: 0; padding: 0 0 1px;
 }
+
+/* Wraps #body + #composer so the drawer can be repositioned as one fixed
+   sheet in walk-active mode without either child having to guess the
+   other's height — #composer's real height (choices can wrap) just falls
+   out of ordinary flex layout, same as it always has inside #shell. */
+#log-drawer { flex: 1; display: flex; flex-direction: column; min-height: 0; }
 
 #body { flex: 1; display: flex; gap: 22px; min-height: 0; padding-top: 14px; }
 
@@ -383,7 +442,10 @@ button.hot { border-color: var(--accent); color: var(--accent); animation: hot-p
 
   /* Pulled up: the strip becomes a sheet over the log, and full detail returns. */
   body.hud-open #hud {
-    position: fixed; inset: auto 0 0 0; z-index: 5;
+    /* Higher than #log-drawer's z-index (6): in walk-active mode #hud can be
+       expanded to its own sheet from *inside* an already-open log-drawer, and
+       that should layer on top of it, not disappear behind it. */
+    position: fixed; inset: auto 0 0 0; z-index: 7;
     flex-direction: column; flex-wrap: nowrap;
     max-height: 72dvh; overflow-y: auto;
     padding: 14px 16px calc(16px + env(safe-area-inset-bottom));

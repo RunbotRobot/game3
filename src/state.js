@@ -4,7 +4,7 @@
 
 export const SAVE_KEY = 'game3.save';
 export const KEY_KEY = 'game3.apikey';
-export const STATE_VERSION = 5;
+export const STATE_VERSION = 6;
 
 // Temporary: pressure fills fast so eras cycle in minutes, not hours, while
 // the shape of the game's arc is still being tuned. Once that shape feels
@@ -98,7 +98,16 @@ const MIGRATIONS = [
     reset.settings.model = model;
     return reset;
   },
-  // v5 -> v6 goes here
+  // v5 -> v6: no shape change — records the log-drawer/second-joystick evolution.
+  (s) => {
+    s.meta = s.meta || {};
+    s.meta.evolutions = s.meta.evolutions || [];
+    s.meta.evolutions.push('The 3D room now fills the screen: log, HUD and composer collapse into a '
+      + 'tap-to-open drawer instead of a fixed reading pane, and a second joystick free-looks the camera '
+      + 'independently of which way you\'re walking.');
+    return s;
+  },
+  // v6 -> v7 goes here
 ];
 
 export function migrate(state) {
