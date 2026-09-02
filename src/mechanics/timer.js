@@ -1,4 +1,4 @@
-import { block, row, meter } from '../ui/dom.js';
+import { block, row, meter, el } from '../ui/dom.js';
 
 /** Real-time pressure. When it runs out the world takes a turn without you. */
 export default {
@@ -7,12 +7,16 @@ export default {
   blurb: 'Something is now happening whether or not you act.',
   install(g, config) {
     const s = g.mech('timer');
-    s.seconds = Number(config.seconds) || 45;
-    s.left = s.seconds;
+    s.seconds = Number(config.seconds) || 75;
+    s.left = Math.min(s.left || s.seconds, s.seconds);
     s.label = config.label || 'it is coming';
+    s.paused = s.paused ?? false;
     clearInterval(s.handle);
     s.handle = setInterval(() => {
-      if (g.busy) return;
+      // The clock is pressure, not a reading test. It holds while a turn is
+      // resolving, while the player has scrolled up to read, while the tab is
+      // in the background, and whenever they have paused it outright.
+      if (g.busy || s.paused || g.ui.reading || document.hidden) return;
       s.left -= 1;
       if (s.left <= 0) { s.left = s.seconds; g.submit('(the moment passes without you)', { silent: true }); }
       g.ui.renderHud();
@@ -25,8 +29,13 @@ export default {
     + `Keep narration short and urgent while this is installed.`,
   hud: (g) => {
     const s = g.mech('timer');
+    const held = s.paused || g.ui.reading;
     const wrap = document.createElement('div');
-    wrap.append(row(s.label, `${s.left}s`), meter(s.left / s.seconds));
+    wrap.append(row(s.label, held ? 'held' : `${s.left}s`), meter(s.left / s.seconds));
+    wrap.append(el('button', {
+      style: { marginTop: '8px' },
+      onClick: () => { s.paused = !s.paused; g.ui.renderHud(); g.save(); },
+    }, s.paused ? 'let it run' : 'hold it'));
     return block('pressure', wrap);
   },
 };

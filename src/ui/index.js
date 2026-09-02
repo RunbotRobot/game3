@@ -8,17 +8,58 @@ export function createUI(g) {
   const floatersEl = $('#floaters');
   const stage = createStage(g, $('#stage'));
 
+  const jumpEl = $('#btn-jump');
+
+  // Stick to the bottom only while the player is already there. Scrolling up is
+  // how you read at your own speed, and yanking the view back down mid-paragraph
+  // is the fastest way to make a game unreadable.
+  let pinned = true;
+  let unread = 0;
+
+  const atBottom = () => logEl.scrollHeight - logEl.scrollTop - logEl.clientHeight < 48;
+  // Follow instantly. Animating it would fire scroll events reading "not at the
+  // bottom" mid-flight, which would unpin the view the moment it auto-scrolled.
   const scroll = () => { logEl.scrollTop = logEl.scrollHeight; };
+
+  function showJump() {
+    jumpEl.hidden = pinned;
+    jumpEl.textContent = unread > 1 ? `↓ ${unread} new` : '↓ new';
+  }
+
+  logEl.addEventListener('scroll', () => {
+    const wasPinned = pinned;
+    pinned = atBottom();
+    if (pinned && !wasPinned) unread = 0;
+    showJump();
+  }, { passive: true });
+
+  jumpEl.addEventListener('click', () => {
+    pinned = true; unread = 0; showJump();
+    logEl.scrollTo({ top: logEl.scrollHeight, behavior: 'smooth' });
+  });
 
   function entry(cls, node) {
     logEl.append(el(`div.entry.${cls}`, {}, node));
     // Keep the DOM bounded on a long session; the save keeps the real history.
-    while (logEl.childElementCount > 220) logEl.firstElementChild.remove();
-    scroll();
+    // Trimming from the top shifts everything up, so give the reader their place back.
+    while (logEl.childElementCount > 220) {
+      const first = logEl.firstElementChild;
+      const shed = first.offsetHeight + parseFloat(getComputedStyle(first).marginBottom || 0);
+      first.remove();
+      if (!pinned) logEl.scrollTop = Math.max(0, logEl.scrollTop - shed);
+    }
+    if (pinned) scroll();
+    else { unread += 1; showJump(); }
   }
 
   const ui = {
     stage,
+
+    /** True while the player has scrolled up to read. Timed mechanics wait. */
+    get reading() { return !pinned; },
+
+    toBottom() { pinned = true; unread = 0; showJump(); scroll(); },
+
 
     narration(text) {
       entry('narration', String(text).split(/\n{2,}/).map((p) => el('p', { text: p.trim() })));

@@ -29,3 +29,12 @@ append here so a later session can see what the game has already been.
   backoff, then falls to another model, then to another provider (keys are now per
   provider), and a failed turn offers a retry rather than being lost. Fixed a filter that
   tested `/mini/` against model ids — every *gemini* model matched it.
+- **Read at your own pace.** The log auto-scrolled on every append, so new text yanked
+  the view down mid-paragraph, and the `timer` mechanic burned turns while the player was
+  still reading. The log now follows only while already at the bottom, offers a "↓ new"
+  button otherwise, and exposes `ui.reading` so timed mechanics hold — as does the clock
+  when the tab is hidden or when held by hand (default 45s to 75s). Auto-follow is
+  instant rather than smooth, because animating it fired mid-flight scroll events that
+  unpinned the view. Added `src/build.js` so a stale cache can be told apart from a fresh
+  rewrite, and made the reload button refetch every file with the cache bypassed first —
+  which is what GitHub Pages' ten-minute max-age needs on a phone.

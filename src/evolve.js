@@ -6,6 +6,7 @@ import { el } from './ui/dom.js';
 import { digest } from './prompt.js';
 import { MECHANICS } from './mechanics/index.js';
 import { pickBestModel } from './llm.js';
+import { BUILD } from './build.js';
 import { freshState } from './state.js';
 
 const REMIND_AFTER = 60 * 60 * 1000;   // one hour of play, not one hour of wall clock
@@ -21,21 +22,37 @@ export async function watchForRewrites(g, every = WATCH_EVERY) {
     return (await r.json()).build;
   };
 
-  let running;
-  try { running = await read(); } catch { return; }   // no version.json: nothing to watch
-  g.build = running;
-  console.info(`game3 build ${running}`);
+  g.build = BUILD;
+  console.info(`game3 build ${BUILD}`);
 
   const btn = document.querySelector('#btn-reload');
-  btn.addEventListener('click', () => { g.save(); location.reload(); });
+  btn.addEventListener('click', async () => {
+    g.save();
+    btn.textContent = 'fetching…';
+    await refetchEverything();
+    location.reload();
+  });
+
+  let published;
+  try { published = await read(); } catch { return; }   // nothing to compare against
+
+  // Published ahead of the code we are running: either a rewrite landed while the
+  // page was open, or the reload came back out of a cache holding the old modules.
+  const offer = (stale) => {
+    if (!btn.hidden) return;
+    btn.hidden = false;
+    g.ui.system(stale
+      ? `⟡ this page is running build ${BUILD}, but ${published} is published — the last reload came out of a cache. press "rewritten ⟳"; it refetches the code before reloading.`
+      : '⟡ the game has been rewritten underneath you. finish what you are doing, then press "rewritten ⟳". your save carries over.');
+  };
+
+  if (published !== BUILD) offer(true);
 
   setInterval(async () => {
     try {
-      const latest = await read();
-      if (latest === running || btn.hidden === false) return;
-      btn.hidden = false;
-      g.ui.system('⟡ the game has been rewritten underneath you. finish what you are doing, then press "rewritten ⟳". your save carries over.');
-    } catch { /* server went away; try again next tick */ }
+      published = await read();
+      if (published !== BUILD) offer(false);
+    } catch { /* host went away; try again next tick */ }
   }, every);
 }
 
@@ -59,6 +76,21 @@ function nudge(g) {
     x: 0.06 + Math.random() * 0.2, y: 0.2 + Math.random() * 0.5, sticky: true,
   });
   g.save();
+}
+
+/**
+ * Re-request every file this page loaded, bypassing the cache, so the reload
+ * that follows starts from fresh copies. On a phone there is no convenient
+ * hard-reload, and GitHub Pages serves assets with a ten-minute max-age — so a
+ * plain reload can land straight back on the code you are trying to replace.
+ */
+async function refetchEverything() {
+  const urls = new Set([location.href.split('#')[0]]);
+  for (const entry of performance.getEntriesByType('resource')) {
+    const [url] = entry.name.split('?');
+    if (url.startsWith(location.origin) && /\.(js|css|json|svg|webmanifest)$/.test(url)) urls.add(url);
+  }
+  await Promise.allSettled([...urls].map((u) => fetch(u, { cache: 'reload' })));
 }
 
 /** The prompt you paste to Claude. Everything Claude needs to morph the code. */

@@ -98,7 +98,7 @@ button.hot { border-color: var(--accent); color: var(--accent); animation: hot-p
 #body { flex: 1; display: flex; gap: 22px; min-height: 0; padding-top: 14px; }
 
 #log {
-  flex: 1; overflow-y: auto; padding-right: 10px; scroll-behavior: smooth;
+  flex: 1; overflow-y: auto; padding-right: 10px;
   mask-image: linear-gradient(to bottom, transparent, #000 28px);
 }
 #log::-webkit-scrollbar { width: 6px; }
@@ -140,6 +140,15 @@ button.hot { border-color: var(--accent); color: var(--accent); animation: hot-p
 .meter > i { display: block; height: 100%; background: var(--accent); transition: width .5s ease; }
 
 #composer { flex: none; padding: 10px 0 16px; }
+#btn-jump {
+  display: block; margin: 0 auto 8px; padding: 7px 16px;
+  border-color: var(--accent); color: var(--accent);
+  background: color-mix(in oklab, var(--bg) 80%, transparent);
+  backdrop-filter: blur(3px);
+  animation: entry-in .3s ease both;
+}
+#btn-jump[hidden] { display: none; }
+
 #choices { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 9px; }
 #choices:empty { display: none; }
 #choices button { color: var(--dim); }

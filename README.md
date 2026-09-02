@@ -75,9 +75,14 @@ stays down until you ask for it. Add it to your home screen and it runs fullscre
 
 The server has to run somewhere your phone can reach it — a machine on the same
 network (`./play.sh`, then browse to that machine's LAN address), or any static host.
-If nothing of yours is always on, GitHub Pages serves this repo as-is with no build
-step; you would then pull by pushing, and `serve.py`'s no-store headers stop applying,
-so hard-reload if a rewrite seems not to have landed.
+
+**On GitHub Pages** there is nothing to pull: a push is the deploy. The catch is that
+Pages serves assets with a ten-minute `max-age`, so a plain reload can hand the browser
+back the same code you are trying to replace — and on a phone there is no convenient
+hard-reload. The game handles this itself: `src/build.js` carries the build baked into
+the running JavaScript, `version.json` carries the published one, and when they disagree
+the header says so. Pressing **rewritten ⟳** re-requests every file with the cache
+bypassed *before* reloading, so the reload starts from fresh copies.
 
 ## Playing
 
@@ -88,6 +93,10 @@ so hard-reload if a rewrite seems not to have landed.
   you for free — only stepping onto unmapped ground spends a turn.
 - **evolve** builds the prompt you paste at Claude to change the source. The button
   starts glowing after an hour of play.
+- **Scroll up and the game waits.** The log only follows along while you are already
+  at the bottom; once you scroll back to read, new text stacks up quietly behind a
+  **↓ new** button and any real-time mechanic holds until you return. The clock also
+  has a **hold it** button, and pauses while the tab is in the background.
 - Floating fragments last a few turns. Tap one to dismiss it, drag to move it,
   press **esc** or use ⚙ → clear fragments to sweep them all.
 - Everything autosaves to `localStorage`; ⚙ can export/import a save as JSON.
@@ -102,9 +111,14 @@ stays down until you ask for it. Add it to your home screen and it runs fullscre
 
 The server has to run somewhere your phone can reach it — a machine on the same
 network (`./play.sh`, then browse to that machine's LAN address), or any static host.
-If nothing of yours is always on, GitHub Pages serves this repo as-is with no build
-step; you would then pull by pushing, and `serve.py`'s no-store headers stop applying,
-so hard-reload if a rewrite seems not to have landed.
+
+**On GitHub Pages** there is nothing to pull: a push is the deploy. The catch is that
+Pages serves assets with a ten-minute `max-age`, so a plain reload can hand the browser
+back the same code you are trying to replace — and on a phone there is no convenient
+hard-reload. The game handles this itself: `src/build.js` carries the build baked into
+the running JavaScript, `version.json` carries the published one, and when they disagree
+the header says so. Pressing **rewritten ⟳** re-requests every file with the cache
+bypassed *before* reloading, so the reload starts from fresh copies.
 
 ## Playing while it is being rewritten
 
@@ -137,7 +151,8 @@ src/llm.js          providers; the only file that knows about HTTP
 src/prompt.js       what the model is told it is
 src/director.js     drift pressure and upheaval
 src/evolve.js       the hourly rewrite nudge, the evolution prompt, settings, rewrite watcher
-version.json        bumped on every rewrite; the running game polls it
+version.json        the published build; polled by the running game
+src/build.js        the build baked into the running code — mismatch means a stale cache
 play.sh             serve + auto-pull
 serve.py            static server that refuses to let the browser cache stale code
 src/mechanics/      one file per way of playing — the seam the game changes through
