@@ -1,4 +1,4 @@
 {
-  "build": "2026-09-02.6",
-  "note": "read at your own pace: sticky scroll, reading-aware clock, stale-build detection"
+  "build": "2026-09-02.7",
+  "note": "dismissing a fragment no longer taps what was underneath it"
 }

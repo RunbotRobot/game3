@@ -70,6 +70,9 @@ Portrait, touch, no keyboard. Assume that when you add anything:
 - Tap targets ≥ 32px, `#input` at 16px or Android zooms on focus, `dvh` not `vh`, and
   `env(safe-area-inset-bottom)` on anything at the bottom.
 - Canvas overlays are suppressed under 620px wide — on a phone they just fight the text.
+- A touch produces a synthesized `click` after `pointerup`. Anything that removes
+  itself on touch must `preventDefault()` on `pointerdown` and stay interactive while
+  it fades, or that click lands on whatever it was covering.
 - Never yank the view. The log follows only while pinned to the bottom (`ui.reading`
   is true once the player scrolls up); anything on a real-time clock must check it and
   hold. Reading speed is the player's, not the game's.

@@ -38,3 +38,9 @@ append here so a later session can see what the game has already been.
   unpinned the view. Added `src/build.js` so a stale cache can be told apart from a fresh
   rewrite, and made the reload button refetch every file with the cache bypassed first —
   which is what GitHub Pages' ten-minute max-age needs on a phone.
+- **Fix — fragments tapped through themselves.** Dismissing a floating fragment removed it
+  on `pointerup`, and the synthesized click that follows a touch then landed on whatever
+  the fragment had been covering — usually a suggested action, which quietly spent a turn.
+  Fragments now cancel the compatibility mouse events on `pointerdown`, swallow clicks
+  outright, and stay interactive while fading so a stray click is absorbed rather than
+  passed through.

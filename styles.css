@@ -36,10 +36,16 @@ html, body {
   border-radius: 3px;
   backdrop-filter: blur(3px);
   animation: floater-in .5s ease both;
+  touch-action: none;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 .floater.dragging { cursor: grabbing; }
 @keyframes floater-in { from { opacity: 0; transform: scale(.9); } }
-.floater.leaving { animation: floater-out .28s ease both; pointer-events: none; }
+/* Stays interactive while it fades: a touch dismissal is followed by a synthesized
+   click at the same point, and the fragment must absorb it rather than let it
+   through to whatever button was underneath. */
+.floater.leaving { animation: floater-out .28s ease both; }
 @keyframes floater-out { to { opacity: 0; transform: scale(.94); filter: blur(2px); } }
 .floater:hover { border-color: color-mix(in oklab, var(--accent) 75%, transparent); }
 .floater::after {

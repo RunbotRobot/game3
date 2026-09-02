@@ -179,7 +179,14 @@ function makeFloater(g, f) {
   };
   place();
 
+  // Nothing that happens on a fragment may reach the page behind it. A touch
+  // produces a synthesized click after pointerup, and by then the fragment is
+  // gone — so the click would land on the choice button it was covering.
+  node.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); });
+
   node.addEventListener('pointerdown', (e) => {
+    e.preventDefault();          // suppresses the compatibility mouse/click events
+    e.stopPropagation();
     // Grab offset: without it the box snaps its own corner to the cursor, which
     // reads as the thing lurching away from you every time you touch it.
     const box = node.getBoundingClientRect();
@@ -220,6 +227,7 @@ function makeFloater(g, f) {
 function dismissFloater(g, f, node) {
   g.state.floaters = g.state.floaters.filter((x) => x !== f);
   node.classList.add('leaving');
+  node.style.pointerEvents = 'auto';   // keep absorbing until it is actually gone
   node.addEventListener('animationend', () => node.remove(), { once: true });
   setTimeout(() => node.remove(), 600);   // in case the animation never fires
   g.save();
