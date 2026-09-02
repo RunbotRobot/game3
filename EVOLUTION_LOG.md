@@ -44,3 +44,9 @@ append here so a later session can see what the game has already been.
   Fragments now cancel the compatibility mouse events on `pointerdown`, swallow clicks
   outright, and stay interactive while fading so a stray click is absorbed rather than
   passed through.
+- **Fix — the keyboard was eating the log.** Sending a typed line left the on-screen
+  keyboard open, which on a phone is roughly 40% of the screen — measured, that dropped
+  the log from ~13 visible lines to ~4. Nothing had ever closed the keyboard the player's
+  own typing opened; `focus()` only ever refused to *reopen* it after a turn. Submitting
+  now blurs the input, and the viewport declares `interactive-widget=resizes-content` so
+  supporting browsers size the layout around the keyboard correctly while it's up.

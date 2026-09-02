@@ -1,4 +1,4 @@
 {
-  "build": "2026-09-02.7",
-  "note": "dismissing a fragment no longer taps what was underneath it"
+  "build": "2026-09-02.8",
+  "note": "close the keyboard after sending a line, so the log gets its space back"
 }

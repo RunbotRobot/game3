@@ -114,6 +114,12 @@ function boot() {
     const el = document.querySelector('#input');
     const v = el.value;
     el.value = '';
+    // Sending your own line is the one thing that opens the keyboard, and it
+    // stays open afterward unless told otherwise — on a phone that is ~40% of
+    // the screen, which is what was actually eating the log down to a few
+    // lines. focus() already refuses to reopen it after a turn; this closes
+    // the one it left open.
+    el.blur();
     submit(v);
   });
 

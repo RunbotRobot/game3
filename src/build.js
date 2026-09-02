@@ -5,4 +5,4 @@
 // a plain reload can return the same stale modules.
 //
 // Bump this and version.json together on every push.
-export const BUILD = '2026-09-02.7';
+export const BUILD = '2026-09-02.8';
