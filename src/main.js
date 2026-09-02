@@ -38,6 +38,7 @@ async function submit(input, { silent = false } = {}) {
       system: systemPrompt(g),
       user: turnPrompt(g, text),
       onNotice: (m) => g.ui.system(m),
+      onStatus: (m) => g.ui.status(m, true),
     });
 
     const narration = String(result.narration || result.text || '').trim();
@@ -71,7 +72,8 @@ async function submit(input, { silent = false } = {}) {
     if (ready) await upheave(g);
   } catch (e) {
     console.error(e);
-    g.ui.error(e.message || String(e));
+    // The turn is not lost: put it back so one tap can send it again.
+    g.ui.error(e.message || String(e), () => submit(text, { silent }));
     g.ui.status('');
     if (/no API key/.test(e.message || '')) g.ui.system('open ⚙ and add a key, or pick the offline dream engine.');
   } finally {
@@ -86,6 +88,7 @@ const mechBlurb = (id) => MECHANICS[id]?.blurb || 'something new is running.';
 // --- boot -------------------------------------------------------------------
 
 function boot() {
+  State.adoptLegacyKey(g.state.settings.provider);
   g.ui = createUI(g);
   rehydrate(g);
   // Belt and braces: drop any fragment that has no life left, whatever wrote it.
@@ -102,6 +105,10 @@ function boot() {
     if (e.role === 'player') g.ui.player(e.text); else g.ui.narration(e.text);
   }
 
+  document.querySelector('#hud').addEventListener('click', (e) => {
+    if (e.target.closest('button')) g.ui.toggleHud(false);
+  });
+
   document.querySelector('#input-row').addEventListener('submit', (e) => {
     e.preventDefault();
     const el = document.querySelector('#input');
@@ -110,9 +117,15 @@ function boot() {
     submit(v);
   });
 
+  document.querySelector('#btn-hud').addEventListener('click', () => g.ui.toggleHud());
+  document.addEventListener('pointerdown', (e) => {
+    if (!document.body.classList.contains('hud-open')) return;
+    if (e.target.closest('#hud, #btn-hud')) return;
+    g.ui.toggleHud(false);
+  });
   document.querySelector('#btn-evolve').addEventListener('click', () => openEvolveModal(g));
   document.querySelector('#btn-settings').addEventListener('click', () =>
-    openSettingsModal(g, { getApiKey: State.getApiKey, setApiKey: State.setApiKey, PROVIDERS }));
+    openSettingsModal(g, { getApiKey: State.getApiKey, setApiKey: State.setApiKey, keyedProviders: State.keyedProviders, PROVIDERS }));
 
   // Mechanics get first refusal on keys, but never while you are typing.
   window.addEventListener('keydown', (e) => {
@@ -137,7 +150,7 @@ function boot() {
 
   // Always playable on first load: with no key, fall back to the offline engine
   // rather than opening on an error.
-  if (!State.getApiKey() && g.state.settings.provider !== 'local') {
+  if (!State.getApiKey(g.state.settings.provider) && g.state.settings.provider !== 'local') {
     g.state.settings.provider = 'local';
     g.ui.system('⟡ running on the offline dream engine. ⚙ settings → Google Gemini is free, and much better at this.');
   }

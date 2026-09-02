@@ -127,22 +127,35 @@ export function openEvolveModal(g) {
     setTimeout(() => { copy.textContent = 'copy prompt'; }, 2200);
   });
 
+  const share = navigator.share ? el('button', {}, 'share to…') : null;
+  share?.addEventListener('click', async () => {
+    try { await navigator.share({ title: 'game3 evolution', text: out.value }); }
+    catch { /* the sheet was dismissed */ }
+  });
+
   g.ui.openModal(
     el('h2', { text: 'rewrite the game' }),
     el('div.sub', { text: 'Paste this to Claude, let it push, then reload. Your save carries over.' }),
     el('label', { text: 'what should change' }), wish,
     el('label', { text: 'prompt' }), out,
-    el('div.row', {}, copy, el('button', { onClick: () => g.ui.closeModal() }, 'close')),
+    el('div.row', {}, copy, share, el('button', { onClick: () => g.ui.closeModal() }, 'close')),
   );
 }
 
 /** Settings: provider, key, model discovery, and the save itself. */
-export function openSettingsModal(g, { getApiKey, setApiKey, PROVIDERS }) {
+export function openSettingsModal(g, { getApiKey, setApiKey, keyedProviders, PROVIDERS }) {
   const s = g.state.settings;
 
   const provider = el('select', {}, ...Object.entries(PROVIDERS).map(([id, p]) =>
     el('option', { value: id, selected: id === s.provider }, p.label)));
-  const key = el('input', { type: 'password', value: getApiKey(), placeholder: 'pasted here, kept in this browser only' });
+  const key = el('input', { type: 'password', value: getApiKey(s.provider), placeholder: 'pasted here, kept in this browser only' });
+  const chain = el('div.hint');
+  const showChain = () => {
+    const held = keyedProviders().filter((id) => PROVIDERS[id]);
+    chain.textContent = held.length > 1
+      ? `fallback order: ${[provider.value, ...held.filter((id) => id !== provider.value)].join(' → ')}`
+      : 'add a key for a second provider and the game will fall through to it when the first is overloaded.';
+  };
   const model = el('input', { type: 'text', value: s.model || '', placeholder: PROVIDERS[s.provider].defaultModel });
   const models = el('select', { style: { marginTop: '6px' } });
   const discover = el('button', {}, 'list models');
@@ -159,9 +172,13 @@ export function openSettingsModal(g, { getApiKey, setApiKey, PROVIDERS }) {
   provider.addEventListener('change', () => {
     model.placeholder = PROVIDERS[provider.value].defaultModel;
     model.value = '';
+    key.value = getApiKey(provider.value);   // keys are per provider now
+    models.hidden = true;
     const next = linkFor(provider.value);
     link.replaceWith(next); link = next;
+    showChain();
   });
+  key.addEventListener('change', () => { setApiKey(provider.value, key.value.trim()); showChain(); });
 
   async function discoverModels() {
     note.textContent = 'asking…';
@@ -176,13 +193,15 @@ export function openSettingsModal(g, { getApiKey, setApiKey, PROVIDERS }) {
     } catch (e) { note.textContent = `could not list models: ${e.message}`; }
   }
   discover.addEventListener('click', discoverModels);
-  if (getApiKey() && PROVIDERS[s.provider].keyUrl) discoverModels();
+  showChain();
+  if (getApiKey(s.provider) && PROVIDERS[s.provider].keyUrl) discoverModels();
 
   const saveBtn = el('button', {}, 'save');
   saveBtn.addEventListener('click', () => {
     s.provider = provider.value;
     s.model = model.value.trim();
-    setApiKey(key.value.trim());
+    setApiKey(provider.value, key.value.trim());
+    delete (s.knownModels || {})[provider.value];   // re-discover against the new key
     g.save();
     g.ui.closeModal();
     g.ui.system(`⟡ now speaking through ${PROVIDERS[s.provider].label}${s.model ? ` / ${s.model}` : ''}`);
@@ -221,7 +240,7 @@ export function openSettingsModal(g, { getApiKey, setApiKey, PROVIDERS }) {
     el('div.hint', { text: `running build ${g.build || 'unknown'} · esc clears floating fragments` }),
     el('div.sub', { text: 'The key lives in this browser only. Nothing is sent anywhere but the provider you pick.' }),
     el('label', { text: 'provider' }), provider, link,
-    el('label', { text: 'api key' }), key,
+    el('label', { text: 'api key' }), key, chain,
     el('label', { text: 'model' }), model, el('div.row', {}, discover), models, note,
     el('div.row', {}, saveBtn, sweep, exportBtn, importBtn, wipeBtn,
       el('button', { onClick: () => g.ui.closeModal() }, 'close')),

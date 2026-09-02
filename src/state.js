@@ -100,8 +100,22 @@ export function save(state) {
   }
 }
 
-export const getApiKey = () => localStorage.getItem(KEY_KEY) || '';
-export const setApiKey = (k) => k ? localStorage.setItem(KEY_KEY, k) : localStorage.removeItem(KEY_KEY);
+// Keys are per provider, so the game can fall through to a second provider when
+// the first is overloaded. They live outside the save: an exported save is a
+// thing you might send somewhere, and it should not carry credentials.
+export const getApiKey = (provider) => localStorage.getItem(`${KEY_KEY}.${provider}`) || '';
+export const setApiKey = (provider, k) =>
+  (k ? localStorage.setItem(`${KEY_KEY}.${provider}`, k) : localStorage.removeItem(`${KEY_KEY}.${provider}`));
+export const keyedProviders = () =>
+  Object.keys(localStorage).filter((k) => k.startsWith(`${KEY_KEY}.`)).map((k) => k.slice(KEY_KEY.length + 1));
+
+/** One-time move from the single-key era. */
+export function adoptLegacyKey(provider) {
+  const legacy = localStorage.getItem(KEY_KEY);
+  if (!legacy) return;
+  if (provider && !getApiKey(provider)) setApiKey(provider, legacy);
+  localStorage.removeItem(KEY_KEY);
+}
 
 // --- the op language --------------------------------------------------------
 // The model mutates the world by emitting ops rather than by writing code. This

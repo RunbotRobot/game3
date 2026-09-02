@@ -33,6 +33,7 @@ export default {
       : el('div', { text: 'nowhere yet', style: { opacity: .6 } }));
   },
   draw(g, ctx, t, W, H) {
+    if (W < 620) return;   // on a phone the HUD carries this; the canvas would just fight the text
     const s = g.mech('nodes');
     const names = Object.keys(s.places);
     if (!names.length) return;

@@ -47,6 +47,12 @@ engine is deliberately stupid. Open **⚙ → provider** and pick one:
 | **Anthropic** | paid | Best prose and the most reliable at obeying mechanics. ~half a cent per turn on Haiku. |
 | **offline** | — | No network. Procedural nonsense, for testing the engine. |
 
+Save a key for **more than one** provider and the game uses the rest as a fallback
+chain. When a model comes back overloaded it waits and retries, then tries another
+model from the same provider, then another provider entirely — telling you each time
+it moves. A turn that fails everywhere is not lost: it comes back with a **try again**
+button. ⚙ shows the fallback order.
+
 Hit **list models** in settings to pull the live model list from whichever provider
 you picked, so you never have to guess a model id — it fills itself in automatically
 when you open settings with a key already saved.
@@ -59,6 +65,20 @@ the save.
 Your key is kept in `localStorage` in your browser and sent only to that provider.
 This is a personal, local toy — don't host it publicly with a key in it.
 
+## On a phone
+
+This is built to be played on one. The HUD is a scrolling strip above the composer
+— several mechanics live in it, so it is never hidden — and the **▤** button pulls it
+up into a full sheet you can play from. The grid mechanic has an on-screen d-pad as
+well as arrow keys. The composer does not steal focus after a turn, so the keyboard
+stays down until you ask for it. Add it to your home screen and it runs fullscreen.
+
+The server has to run somewhere your phone can reach it — a machine on the same
+network (`./play.sh`, then browse to that machine's LAN address), or any static host.
+If nothing of yours is always on, GitHub Pages serves this repo as-is with no build
+step; you would then pull by pushing, and `serve.py`'s no-store headers stop applying,
+so hard-reload if a rewrite seems not to have landed.
+
 ## Playing
 
 - Type anything. The suggested actions are suggestions, not a menu.
@@ -68,9 +88,23 @@ This is a personal, local toy — don't host it publicly with a key in it.
   you for free — only stepping onto unmapped ground spends a turn.
 - **evolve** builds the prompt you paste at Claude to change the source. The button
   starts glowing after an hour of play.
-- Floating fragments last a few turns. Click one to dismiss it, drag to move it,
-  or press **esc** to sweep them all.
+- Floating fragments last a few turns. Tap one to dismiss it, drag to move it,
+  press **esc** or use ⚙ → clear fragments to sweep them all.
 - Everything autosaves to `localStorage`; ⚙ can export/import a save as JSON.
+
+## On a phone
+
+This is built to be played on one. The HUD is a scrolling strip above the composer
+— several mechanics live in it, so it is never hidden — and the **▤** button pulls it
+up into a full sheet you can play from. The grid mechanic has an on-screen d-pad as
+well as arrow keys. The composer does not steal focus after a turn, so the keyboard
+stays down until you ask for it. Add it to your home screen and it runs fullscreen.
+
+The server has to run somewhere your phone can reach it — a machine on the same
+network (`./play.sh`, then browse to that machine's LAN address), or any static host.
+If nothing of yours is always on, GitHub Pages serves this repo as-is with no build
+step; you would then pull by pushing, and `serve.py`'s no-store headers stop applying,
+so hard-reload if a rewrite seems not to have landed.
 
 ## Playing while it is being rewritten
 

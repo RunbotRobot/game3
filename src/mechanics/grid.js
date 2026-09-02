@@ -1,9 +1,22 @@
-import { block, row } from '../ui/dom.js';
+import { block, row, el } from '../ui/dom.js';
 
 const key = (x, y) => `${x},${y}`;
 
 /** The prose becomes a place with coordinates. Arrows move you for free;
  *  only stepping onto unmapped ground costs a turn. */
+/** Movement is free on mapped ground; only unmapped ground costs a turn. */
+function step(g, dx, dy) {
+  const s = g.mech('grid');
+  if (g.busy || (!dx && !dy)) return;
+  const nx = Math.max(0, Math.min(s.w - 1, s.x + dx));
+  const ny = Math.max(0, Math.min(s.h - 1, s.y + dy));
+  if (nx === s.x && ny === s.y) return;
+  s.x = nx; s.y = ny;
+  const known = s.tiles[key(nx, ny)];
+  if (known) { g.ui.system(`⟶ ${known.label || key(nx, ny)}`); g.ui.renderHud(); g.save(); }
+  else g.submit(`(step onto unmapped ground at ${nx},${ny})`);
+}
+
 export default {
   id: 'grid',
   name: 'Cartography',
@@ -18,16 +31,9 @@ export default {
     s.tiles[key(s.x, s.y)] = s.tiles[key(s.x, s.y)] || { glyph: '·', label: 'where you started' };
   },
   keydown(g, e) {
-    const s = g.mech('grid');
     const d = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0] }[e.key];
-    if (!d || g.busy) return false;
-    const nx = Math.max(0, Math.min(s.w - 1, s.x + d[0]));
-    const ny = Math.max(0, Math.min(s.h - 1, s.y + d[1]));
-    if (nx === s.x && ny === s.y) return true;
-    s.x = nx; s.y = ny;
-    const known = s.tiles[key(nx, ny)];
-    if (known) { g.ui.system(`⟶ ${known.label || key(nx, ny)}`); g.ui.renderHud(); g.save(); }
-    else g.submit(`(step onto unmapped ground at ${nx},${ny})`);
+    if (!d) return false;
+    step(g, d[0], d[1]);
     return true;
   },
   prompt: (g) => {
@@ -50,10 +56,21 @@ export default {
   },
   hud: (g) => {
     const s = g.mech('grid');
+    // A d-pad, not just arrow keys: this is played on a phone.
+    const pad = (label, dx, dy) => el('button', {
+      onClick: () => step(g, dx, dy),
+      style: { padding: '10px 0', minWidth: '0' },
+    }, label);
+    const gap = el('span');
+    const dpad = el('div', {
+      style: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '4px', marginTop: '8px' },
+    }, gap, pad('↑', 0, -1), el('span'), pad('←', -1, 0), pad('·', 0, 0), pad('→', 1, 0),
+       el('span'), pad('↓', 0, 1), el('span'));
     return block('position', row('at', `${s.x}, ${s.y}`), row('mapped', `${Object.keys(s.tiles).length} / ${s.w * s.h}`),
-      row('here', s.tiles[key(s.x, s.y)]?.label || '—'));
+      row('here', s.tiles[key(s.x, s.y)]?.label || '—'), dpad);
   },
   draw(g, ctx, t, W, H) {
+    if (W < 620) return;   // on a phone the HUD carries this; the canvas would just fight the text
     const s = g.mech('grid');
     const cell = Math.min(26, Math.floor(Math.min(W, H) / (Math.max(s.w, s.h) + 6)));
     if (cell < 6) return;

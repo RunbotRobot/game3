@@ -57,12 +57,27 @@ A good new mechanic **changes what the player's hands do**, not just what the HU
 `deck` (you play cards instead of typing) and `grid` (arrows move you for free, only
 unmapped ground costs a turn) are the bar. A new meter is not a new mechanic.
 
+## This is played on a phone
+
+Portrait, touch, no keyboard. Assume that when you add anything:
+
+- Nothing interactive may live only in a hover, a keypress, or a desktop-width layout.
+  `#hud` was `display:none` under 760px once, which silently made the card hand and the
+  travel list unplayable. If a mechanic gives a keyboard control, give it an on-screen
+  control too (see the d-pad in `grid.js`).
+- Tap targets ≥ 32px, `#input` at 16px or Android zooms on focus, `dvh` not `vh`, and
+  `env(safe-area-inset-bottom)` on anything at the bottom.
+- Canvas overlays are suppressed under 620px wide — on a phone they just fight the text.
+- Do not add a service worker. It would cache the very files the hourly rewrite replaces.
+
 ## Where things live
 
 - `src/prompt.js` — the game's voice and rules. Edit here to change *how it narrates*.
 - `src/director.js` — drift pressure and what an upheaval does. Edit to change *pacing*.
 - `src/evolve.js` — the hourly nudge and the evolution prompt itself. Meta.
-- `src/llm.js` — providers. The only file that touches `fetch`.
+- `src/llm.js` — providers. The only file that touches `fetch`. `ask()` walks a fallback
+  chain (retry → another model → another provider) and heals retired model ids. Keys are
+  per provider in `localStorage`, deliberately not in the save.
 - `src/ui/stage.js` — the particle field; `MOTION` maps the model's mood word to physics.
 - `src/ui/index.js` — log, HUD, floating fragments. Fragments are turn-scoped: `ttl` counts
   down once per completed turn, `sticky` exempts one (only the rewrite nudge uses it).

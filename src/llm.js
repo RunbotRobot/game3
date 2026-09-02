@@ -1,7 +1,7 @@
 // Provider abstraction. Every provider takes {system, user} and returns parsed JSON.
 // Adding a provider here is the only place that should ever know about HTTP.
 
-import { getApiKey } from './state.js';
+import { getApiKey, keyedProviders } from './state.js';
 
 export const PROVIDERS = {
   gemini: {
@@ -18,7 +18,7 @@ export const PROVIDERS = {
         const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(key)}&pageSize=200`
           + (pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : '');
         const r = await fetch(url);
-        if (!r.ok) throw new Error(await describe(r));
+        if (!r.ok) throw await describe(r);
         const j = await r.json();
         models.push(...(j.models || []));
         pageToken = j.nextPageToken || '';
@@ -44,7 +44,7 @@ export const PROVIDERS = {
             .map((category) => ({ category, threshold: 'BLOCK_ONLY_HIGH' })),
         }),
       });
-      if (!r.ok) throw new Error(await describe(r));
+      if (!r.ok) throw await describe(r);
       const j = await r.json();
       const parts = j.candidates?.[0]?.content?.parts || [];
       const text = parts.map((p) => p.text || '').join('');
@@ -67,7 +67,7 @@ export const PROVIDERS = {
     defaultModel: 'deepseek/deepseek-chat-v3-0324:free',
     async listModels() {
       const r = await fetch('https://openrouter.ai/api/v1/models');
-      if (!r.ok) throw new Error(await describe(r));
+      if (!r.ok) throw await describe(r);
       const j = await r.json();
       return (j.data || []).map((m) => m.id).filter((id) => id.endsWith(':free')).sort();
     },
@@ -82,7 +82,7 @@ export const PROVIDERS = {
       const r = await fetch('https://api.anthropic.com/v1/models?limit=100', {
         headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
       });
-      if (!r.ok) throw new Error(await describe(r));
+      if (!r.ok) throw await describe(r);
       return ((await r.json()).data || []).map((m) => m.id);
     },
     async complete({ key, model, system, user, temperature }) {
@@ -97,7 +97,7 @@ export const PROVIDERS = {
           messages: [{ role: 'user', content: user }, { role: 'assistant', content: '{' }],
         }),
       });
-      if (!r.ok) throw new Error(await describe(r));
+      if (!r.ok) throw await describe(r);
       const j = await r.json();
       return '{' + (j.content || []).map((c) => c.text || '').join('');
     },
@@ -114,7 +114,7 @@ export const PROVIDERS = {
 
 async function openaiListModels(url, key) {
   const r = await fetch(url, { headers: { authorization: `Bearer ${key}` } });
-  if (!r.ok) throw new Error(await describe(r));
+  if (!r.ok) throw await describe(r);
   return ((await r.json()).data || []).map((m) => m.id).sort();
 }
 
@@ -128,7 +128,7 @@ async function openaiComplete(url, { key, model, system, user, temperature }) {
       messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
     }),
   });
-  if (!r.ok) throw new Error(await describe(r));
+  if (!r.ok) throw await describe(r);
   const j = await r.json();
   const text = j.choices?.[0]?.message?.content;
   if (!text) throw new Error('empty response');
@@ -141,47 +141,120 @@ async function describe(r) {
     const body = await r.text();
     detail = (JSON.parse(body).error?.message) || body.slice(0, 300);
   } catch { /* non-JSON error body */ }
-  const hint = r.status === 429 ? ' — free-tier rate limit; wait a moment'
+  const hint = r.status === 429 ? ' — rate limit'
     : r.status === 400 || r.status === 404 ? ' — check the model name in settings'
     : r.status === 401 || r.status === 403 ? ' — check your API key'
     : '';
-  return `${r.status} ${r.statusText}${detail ? `: ${detail}` : ''}${hint}`;
+  const e = new Error(`${r.status} ${r.statusText}${detail ? `: ${detail}` : ''}${hint}`);
+  e.status = r.status;
+  return e;
 }
 
-/** Ask the current provider for one JSON object. Retries once on a parse failure. */
-export async function ask({ state, system, user, temperature, onNotice }) {
-  const provider = PROVIDERS[state.settings.provider] || PROVIDERS.local;
-  const key = getApiKey();
-  if (!key && provider !== PROVIDERS.local) throw new Error('no API key set — open ⚙ settings');
-  let model = state.settings.model || provider.defaultModel;
-  const base = { key, system, user, temperature: temperature ?? state.settings.temperature ?? 1 };
+/** Overload and rate limiting are worth waiting out or routing around; a bad key
+ *  or a bad model name is not — retrying those just wastes the player's time. */
+export function isTransient(e) {
+  if (e?.status) return [408, 409, 425, 429, 500, 502, 503, 504, 529].includes(e.status);
+  return /network|failed to fetch|load failed|timeout|aborted/i.test(e?.message || '');
+}
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/** Model ids the provider actually offered us, cached in the save so a fallback
+ *  does not need a network round trip in the middle of a failing turn. */
+async function knownModels(state, providerId) {
+  const cache = (state.settings.knownModels = state.settings.knownModels || {});
+  const fresh = cache[providerId];
+  if (fresh?.length) return fresh;
+  const list = await PROVIDERS[providerId].listModels(getApiKey(providerId));
+  cache[providerId] = list.slice(0, 60);
+  return cache[providerId];
+}
+
+/** Everything we are willing to try for one turn, best first. Lazy, because the
+ *  alternates cost a network call we should not make unless the first choice failed. */
+async function* candidates(state) {
+  const primaryId = state.settings.provider;
+  const primary = PROVIDERS[primaryId] || PROVIDERS.local;
+  const chosen = state.settings.model || primary.defaultModel;
+  yield { providerId: primaryId, model: chosen, patient: true };
+
+  // Same provider, different model: a 503 is usually one model being hammered.
+  if (primaryId !== 'local') {
+    let alts = [];
+    try { alts = await knownModels(state, primaryId); } catch { /* offer nothing */ }
+    const ranked = alts.filter((m) => m !== chosen).sort((a, b) => scoreModel(b) - scoreModel(a));
+    for (const m of ranked.slice(0, 2)) yield { providerId: primaryId, model: m };
+  }
+
+  // Then any other provider we hold a key for.
+  for (const id of keyedProviders()) {
+    if (id === primaryId || !PROVIDERS[id]) continue;
+    yield { providerId: id, model: PROVIDERS[id].defaultModel };
+  }
+}
+
+/**
+ * Ask for one JSON object, working down the fallback chain.
+ * Transient failures on the chosen model are waited out before moving on, since
+ * switching model mid-story is more disruptive than a few seconds of delay.
+ */
+export async function ask({ state, system, user, temperature, onNotice, onStatus }) {
+  if (state.settings.provider !== 'local' && !getApiKey(state.settings.provider)) {
+    throw new Error('no API key set — open ⚙ settings');
+  }
 
   let last;
-  for (let attempt = 0; attempt < 3; attempt++) {
-    try {
-      const raw = await provider.complete({
-        ...base, model,
-        user: attempt === 0 ? user
-          : `${user}\n\nYour previous reply was not valid JSON. Reply with the JSON object only.`,
-      });
-      return extractJson(raw);
-    } catch (e) {
-      last = e;
-      // Providers retire model ids without warning. Rather than stranding a save
-      // mid-playthrough, ask the provider what it has now and carry on.
-      if (isRetiredModel(e) && provider.listModels) {
-        const replacement = await rediscover(provider, key).catch(() => null);
-        if (replacement && replacement !== model) {
-          model = replacement;
-          state.settings.model = replacement;
-          onNotice?.(`⟡ "${e.message.match(/models\/([\w.-]+)/)?.[1] || 'that model'}" is gone; speaking through ${replacement} now.`);
+  let switched = false;
+
+  for await (const cand of candidates(state)) {
+    const provider = PROVIDERS[cand.providerId];
+    const key = getApiKey(cand.providerId);
+    if (!provider || (cand.providerId !== 'local' && !key)) continue;
+
+    const patience = cand.patient ? [0, 1500, 4000] : [0];
+    for (let i = 0; i < patience.length; i++) {
+      if (patience[i]) {
+        onStatus?.(`the world is busy — trying again in ${Math.round(patience[i] / 1000)}s…`);
+        await sleep(patience[i]);
+      }
+      try {
+        const raw = await provider.complete({
+          key, model: cand.model, system, user,
+          temperature: temperature ?? state.settings.temperature ?? 1,
+        });
+        const parsed = extractJson(raw);
+        if (switched) {           // remember what actually worked
+          state.settings.provider = cand.providerId;
+          state.settings.model = cand.model;
+        }
+        return parsed;
+      } catch (e) {
+        last = e;
+
+        // A retired model id is worth healing in place rather than falling past.
+        if (isRetiredModel(e) && provider.listModels) {
+          const replacement = await rediscover(provider, key).catch(() => null);
+          if (replacement && replacement !== cand.model) {
+            onNotice?.(`⟡ "${cand.model}" is gone; speaking through ${replacement} now.`);
+            state.settings.model = replacement;
+            cand.model = replacement;
+            i = -1;               // start this candidate's patience over
+            continue;
+          }
+        }
+        if (/JSON/i.test(e.message || '')) {
+          user = `${user}\n\nYour previous reply was not valid JSON. Reply with the JSON object only.`;
           continue;
         }
+        if (!isTransient(e)) break;   // bad key or bad request: the chain will not help
       }
-      if (!/JSON/i.test(e.message || '')) throw e;   // only reprompt on parse failures
     }
+
+    switched = true;
+    onNotice?.(`⟡ ${cand.model} would not answer. trying something else…`);
   }
-  throw last;
+
+  throw last || new Error('nothing answered');
 }
 
 const isRetiredModel = (e) =>
@@ -191,17 +264,25 @@ async function rediscover(provider, key) {
   return pickBestModel(await provider.listModels(key));
 }
 
-/** Prefer the newest plain "flash"-class model: fast, cheap, and on the free tier. */
+/**
+ * Rank a model id for this game: fast, cheap, current, and on a free tier.
+ * Match on whole words — an earlier version tested /mini/ against the id and
+ * every *gemini* model matched it.
+ */
+export function scoreModel(id) {
+  const words = String(id).toLowerCase().split(/[^a-z0-9.]+/);
+  const has = (...w) => w.some((x) => words.includes(x));
+  let n = 0;
+  if (has('flash', 'mini', 'haiku', 'instant', 'small')) n += 100;
+  if (has('lite', 'thinking', 'preview', 'exp', 'experimental', 'tuning', 'latest', '8b')) n -= 40;
+  if (has('pro', 'sonnet', 'large')) n += 20;
+  if (has('opus', 'ultra')) n -= 10;                       // capable, but slow and dear per turn
+  const version = parseFloat((id.match(/(\d+(?:\.\d+)?)/) || [])[1] || '0');
+  return n + Math.min(version, 99);
+}
+
 export function pickBestModel(list) {
-  const score = (id) => {
-    let n = 0;
-    if (/flash/i.test(id)) n += 100;
-    if (/lite|thinking|preview|exp|tuning|latest|-8b/i.test(id)) n -= 40;
-    if (/pro/i.test(id)) n += 20;
-    const version = parseFloat((id.match(/(\d+(?:\.\d+)?)/) || [])[1] || '0');
-    return n + Math.min(version, 99);
-  };
-  return [...list].sort((a, b) => score(b) - score(a))[0] || null;
+  return [...list].sort((a, b) => scoreModel(b) - scoreModel(a))[0] || null;
 }
 
 /** Models wrap JSON in prose, fences, or trailing commas. Be forgiving. */

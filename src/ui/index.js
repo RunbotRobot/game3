@@ -25,7 +25,10 @@ export function createUI(g) {
     },
     player(text) { entry('player', el('span', { text })); },
     system(text) { entry('system', el('span', { text })); },
-    error(text) { entry('error', el('span', { text: `⚠ ${text}` })); },
+    error(text, retry) {
+      entry('error', el('span', {}, `⚠ ${text}`,
+        retry ? el('button', { style: { marginLeft: '10px' }, onClick: (e) => { e.target.closest('.entry').remove(); retry(); } }, 'try again') : null));
+    },
     upheaval(text) { entry('upheaval', el('span', { text })); },
 
     status(text, thinking = false) {
@@ -60,7 +63,14 @@ export function createUI(g) {
       if (!p) return;
       const root = document.documentElement.style;
       for (const k of ['bg', 'fg', 'accent']) if (isHex(p[k])) root.setProperty(`--${k}`, p[k]);
-      document.documentElement.style.setProperty('color-scheme', isDark(p.bg) ? 'dark' : 'light');
+      root.setProperty('color-scheme', isDark(p.bg) ? 'dark' : 'light');
+      // Android paints the status bar with this, so the era should own it too.
+      if (isHex(p.bg)) document.querySelector('meta[name=theme-color]')?.setAttribute('content', p.bg);
+    },
+
+    toggleHud(force) {
+      const open = force ?? !document.body.classList.contains('hud-open');
+      document.body.classList.toggle('hud-open', open);
     },
 
     renderDrift() {
@@ -108,7 +118,9 @@ export function createUI(g) {
     },
     closeModal() { if (modal.open) modal.close(); },
 
-    focus() { inputEl.focus(); },
+    // On a phone, refocusing after every turn throws the keyboard up over the
+    // prose you just asked for. Let the player decide when to type.
+    focus() { if (!matchMedia('(hover: none), (pointer: coarse)').matches) inputEl.focus(); },
   };
 
   modal.addEventListener('click', (e) => { if (e.target === modal) modal.close(); });

@@ -22,3 +22,10 @@ append here so a later session can see what the game has already been.
   cannot be masked by a cached module), the running build id in settings and the console,
   esc to sweep all fragments, and a boot-time cull of any fragment with no life left.
   Default fragment lifetime cut from 6 turns to 3.
+- **Phone-first, and a fallback chain.** The game is played only on a phone, where the HUD
+  had been hidden below 760px — making the card hand, inventory and travel list unreachable.
+  It is now a scrolling strip that pulls up into a sheet, with a d-pad for `grid`, no focus
+  stealing, safe-area padding and a web app manifest. On overload, `ask()` retries with
+  backoff, then falls to another model, then to another provider (keys are now per
+  provider), and a failed turn offers a retry rather than being lost. Fixed a filter that
+  tested `/mini/` against model ids — every *gemini* model matched it.
