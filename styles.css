@@ -23,8 +23,51 @@ html, body {
 
 /* width/height are required: <canvas> is a replaced element, so inset:0 alone
    collapses it to its intrinsic 300x150 instead of stretching. */
+/* [hidden] must always win: several full-bleed layers below (scene3d, the
+   joystick, walk-labels) are shown/hidden purely via the hidden PROPERTY, and
+   a plain #id{display:block} rule would otherwise beat the UA's [hidden] rule
+   on specificity and leave the layer visible. */
+[hidden] { display: none !important; }
+
 #stage { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; display: block; }
+/* The 3D scene: a second full-bleed canvas, shown instead of the particle
+   field while `walk` is installed (see walk.js) rather than sharing one —
+   a canvas can only ever have one kind of rendering context. */
+#scene3d { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; display: block; }
 #floaters { position: fixed; inset: 0; z-index: 2; pointer-events: none; }
+
+/* Billboard labels for props and exits in the 3D scene — positioned every
+   frame from a projected world point, not the turn-scoped #rig overlay. */
+#walk-labels { position: fixed; inset: 0; z-index: 2; pointer-events: none; }
+.walk-label {
+  position: absolute; top: 0; left: 0; pointer-events: none;
+  font-size: 11px; padding: 2px 7px; border-radius: 3px; white-space: nowrap;
+  color: var(--fg); background: color-mix(in oklab, var(--bg) 60%, transparent);
+  border: 1px solid color-mix(in oklab, var(--fg) 25%, transparent);
+  backdrop-filter: blur(2px);
+}
+
+/* The thumbstick: fixed low and to one side so it never competes with the
+   composer or the HUD strip, generous for a thumb, translucent over the scene. */
+#joystick {
+  position: fixed; z-index: 3;
+  left: max(18px, env(safe-area-inset-left));
+  bottom: max(160px, 24vh);
+  width: 96px; height: 96px; border-radius: 50%;
+  background: color-mix(in oklab, var(--bg) 55%, transparent);
+  border: 1px solid color-mix(in oklab, var(--fg) 30%, transparent);
+  touch-action: none; -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+#joystick-knob {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: 44px; height: 44px; border-radius: 50%;
+  background: color-mix(in oklab, var(--accent) 30%, var(--bg));
+  border: 1px solid var(--accent);
+  pointer-events: none;
+  /* No blanket transition: it would lag a finger dragging the knob every
+     frame. walk.js adds a short one only for the release snap-back. */
+}
 
 /* The apparatus overlay: parts the model places over the scene, touched or
    dragged directly instead of being described and then typed about. */
@@ -133,6 +176,27 @@ button.hot { border-color: var(--accent); color: var(--accent); animation: hot-p
 #drift-fill {
   height: 100%; width: 0%; background: var(--accent);
   transition: width .8s ease; opacity: .65;
+}
+
+/* Always visible, never subject to the HUD strip's collapse — the whole point
+   is that the player always knows what they're playing toward. */
+#goal-bar {
+  flex: none; display: flex; align-items: baseline; gap: 8px;
+  padding: 7px 4px 5px; margin: 0; border: 0; background: none; cursor: pointer;
+  font: inherit; text-align: left; color: inherit; width: 100%;
+}
+#goal-label {
+  font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--accent);
+  flex: none;
+}
+#goal-text {
+  font-size: 12.5px; color: var(--fg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+#goal-bar:hover #goal-text, #goal-bar:focus-visible #goal-text { color: var(--accent); }
+#goal-bar.empty #goal-text { color: var(--dim); font-style: italic; }
+#goal-input {
+  flex: 1; min-width: 0; font: inherit; font-size: 12.5px; color: var(--fg);
+  background: transparent; border: 0; border-bottom: 1px solid var(--accent); outline: 0; padding: 0 0 1px;
 }
 
 #body { flex: 1; display: flex; gap: 22px; min-height: 0; padding-top: 14px; }

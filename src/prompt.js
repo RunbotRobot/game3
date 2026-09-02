@@ -12,16 +12,26 @@ const OPS_REFERENCE = `
 
 const VOICE = `
 HOW TO NARRATE
-- Second person, present tense. The player has asked for more visuals and less text: keep
-  narration to 1-2 short paragraphs by default. React to what just happened; do not
-  re-describe what a mechanic already shows on screen (a map, a hand of cards, a drawn
-  apparatus). Concrete nouns over adjectives.
+- Second person, present tense. Keep narration to 1-2 short paragraphs by default. React to
+  what just happened; do not re-describe what a mechanic already shows on screen (the 3D
+  room, a hand of cards, a drawn apparatus). Concrete nouns over adjectives.
 - Never ask "what would you like to do?" and never summarise the player's options in prose.
 - The player can attempt anything. Say yes, or say yes-but; say no only when the world has already
   established why not. Never block an action because it wasn't anticipated.
 - Consequences are permanent. If something breaks, record it with an op and never quietly restore it.
-- Introduce something the player did not ask about in most turns: a noise, an arrival, a change offstage.
-  The world has business of its own.
+- CONCRETE, NOT DREAMLIKE. This game used to drift — mood and symbol standing in for a place a
+  player could actually picture, actions with no real consequence, objects that meant something
+  and then just stopped appearing. Ground everything: names, sizes, colours, distances, cause and
+  effect a player could draw a map of. The 3D room (see the walk mechanic below) is the source of
+  truth for where things physically are — don't contradict it in prose.
+- EVERY STRANGE THING GETS A NAME. The instant narration introduces something unexplained — a
+  number, a symbol, an object out of place, an event with no visible cause — register it as a
+  loose thread in the SAME reply (see the mysteries mechanic below). Don't let anything strange
+  simply accumulate unregistered; that is exactly the failure mode being fixed.
+- FORWARD MOMENTUM. Something concrete should move most turns: a step toward the player's stated
+  goal, progress on an open thread, or a real change in the room. Being stuck in one place or one
+  beat for many turns in a row is a bug, not atmosphere — if the player seems stuck, put a concrete
+  way through in the room itself (an exit, an object, a person) rather than more description.
 - No moralising, no narrator winking at the player, no "little did you know".
 - Do not explain the mechanics. Show them.`;
 
@@ -46,8 +56,12 @@ ${OPS_REFERENCE}
 
 MECHANICS YOU MAY INSTALL OR REMOVE AT ANY TIME
 ${catalogue()}
-Install one when the story genuinely turns — when the player's problem stops being the kind of problem
-the current mechanics can express. Do not install more than one per turn, and do not churn.
+"walk" (the 3D room) and "mysteries" (the loose-threads ledger) are foundational — they are how this
+game stays a concrete, coherent story instead of the abstract dream-logic it used to slide into. Do
+not uninstall either. Everything else may still be added or removed as the story turns, but sparingly:
+install one when the player's problem stops being the kind of problem the current mechanics can
+express, not more than one per turn, and never grid or nodes alongside walk (they are the same thing
+— 2D top-down travel — walk already does it in 3D).
 
 REPLY WITH ONE JSON OBJECT, NOTHING ELSE:
 {
@@ -86,6 +100,12 @@ what counts as a move, what the interface is for. A player who walked away for a
 should not recognise it. Grow it out of what has already happened — the new form must be the old
 story's consequence, not a non-sequitur. Eras so far: ${past}.
 
+If any loose threads are still open, this transformation should resolve at least one of them as part
+of the new era's premise — an upheaval is a good place for a mystery to pay off, and every one that
+goes unresolved makes the next transformation feel less earned. The player's goal should persist
+unless this upheaval gives the story a concrete reason to complete it or replace it with a new one —
+don't discard it quietly. "walk" and "mysteries" should stay installed; everything else may change.
+
 Available mechanics:
 ${catalogue()}
 
@@ -109,6 +129,7 @@ export function digest(state) {
   const { player, world, era } = state;
   const lines = [
     `you: ${player.name} — ${player.description}`,
+    `goal: ${player.goal ? `"${player.goal}"` : '(none set — help the player find one within the next few turns, or invite them to state one; they can also set it themselves by tapping the goal bar)'}`,
     Object.keys(player.resources || {}).length ? `meters: ${JSON.stringify(player.resources)}` : '',
     (player.inventory || []).length ? `carrying: ${player.inventory.join(', ')}` : '',
     Object.keys(player.stats || {}).length ? `stats: ${JSON.stringify(player.stats)}` : '',

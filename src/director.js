@@ -4,7 +4,7 @@
 
 import { ask } from './llm.js';
 import { upheavalPrompt } from './prompt.js';
-import { applyOps } from './state.js';
+import { applyOps, FAST_ARC_TUNING } from './state.js';
 import { install, uninstall } from './mechanics/index.js';
 
 /** Pressure rises faster when the player is pushing at the edges of the fiction. */
@@ -49,14 +49,17 @@ export async function upheave(g) {
   for (const f of side.float) g.ui.addFloater(f);
 
   // Each era is harder to leave than the last, so the game settles as it deepens.
+  // (Both numbers are the temporary fast-pacing constants — see state.js.)
   g.state.drift.pressure = 0;
-  g.state.drift.threshold = Math.min(46, Math.round(g.state.drift.threshold * 1.35));
+  g.state.drift.threshold = Math.min(FAST_ARC_TUNING.cap, Math.round(g.state.drift.threshold * FAST_ARC_TUNING.growth));
 
   g.ui.upheaval(`${previous} ends`);
   g.ui.renderEra();
   if (r.narration) { g.ui.narration(r.narration); g.state.transcript.push({ role: 'game', text: r.narration, ts: Date.now() }); }
   g.ui.system(`⟡ era ${era.index}: ${era.name} — ${era.mechanics.join(', ') || 'prose only'}`);
   g.ui.renderHud();
+  g.ui.renderRig();
+  g.ui.renderGoal();
   g.ui.renderDrift();
   g.save();
 }

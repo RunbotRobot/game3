@@ -70,3 +70,29 @@ append here so a later session can see what the game has already been.
   time-critical thing that can't wait for a tap. Also: `#era-name` had no line-clamp, so a
   long title wrapped to two lines and the second line ran under the baseline-aligned clock
   and buttons — it's now single-line with an ellipsis on phone widths.
+- **The reset — a concrete, coherent world in 3D.** Requested by the player: the game had
+  become too abstract and dream-like, with mysteries (47 tally marks, among others) that
+  were never on track to be explained, and it took too long to leave the opening scene.
+  Reused the engine — op language, provider fallback, the evolve loop, mobile chrome — and
+  replaced the defaults that were producing that feel:
+  - `src/engine3d.js` — a hand-rolled WebGL renderer (mat4/vec3 math, flat-shaded boxes,
+    a procedural grid-floor shader; no external 3D library). `walk.js` uses it for a
+    third-person room the player moves through with a thumbstick instead of typed or
+    tapped travel — the model authors geography via `world.walkPlaces.<id>`/`world.walkAt`,
+    the same delta-channel idiom `grid`/`nodes` already used. Installed by default; `grid`
+    and `nodes` still exist but are now discouraged alongside it (same feature, worse fit).
+  - `mysteries.js` — a loose-threads ledger. Every unexplained fact the story introduces
+    must be registered (`world.mysteryOpen.<id>`) in the same reply and resolved
+    (`world.mysteryResolved.<id>`) once earned; the HUD title shows the open count even
+    collapsed. Installed by default, and instructed never to be uninstalled.
+  - `player.goal` — a plain string, not a mechanic, shown in a new always-visible goal bar
+    under the drift rail. The player can set or overwrite it by tapping it; the model reads
+    it every turn from `digest()` and can update it as the story develops.
+  - `prompt.js` rewritten for concreteness and forward momentum: ground everything in
+    named, physically consistent detail; register the strange instead of letting it
+    accumulate; something should move most turns.
+  - Pacing temporarily much faster (`FAST_ARC_TUNING` in `state.js`, threshold 14 → 6) so
+    a full arc can be felt in one sitting while its shape is tuned.
+  - `STATE_VERSION` 4 → 5: an intentional, explicitly-requested full reset (not the usual
+    additive migration) — carries forward only the evolution history and the provider/model
+    choice. Documented in `CLAUDE.md` as a one-time pattern, not a template.

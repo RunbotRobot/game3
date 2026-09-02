@@ -6,7 +6,9 @@ import { MECHANICS, install, uninstall, rehydrate, collect } from './mechanics/i
 import { addPressure, upheave } from './director.js';
 import { tick, openEvolveModal, openSettingsModal, watchForRewrites } from './evolve.js';
 
-const OPENING = '(begin — open somewhere specific and strange, establish who I am in one clause, explain nothing)';
+const OPENING = '(begin — build the first room with the walk mechanic and put me in it; give me one concrete, '
+  + 'nameable reason to be there; open with something strange enough to register as a loose thread, not '
+  + 'atmosphere for its own sake)';
 
 const g = {
   state: State.load(),
@@ -101,6 +103,7 @@ function boot() {
   g.ui.renderFloaters();
   g.ui.renderDrift();
   g.ui.renderClock();
+  g.ui.renderGoal();
 
   // Replay enough of the transcript that a reload feels like sitting back down.
   for (const e of g.state.transcript.slice(-8)) {
@@ -131,6 +134,10 @@ function boot() {
   });
 
   document.querySelector('#btn-hud').addEventListener('click', () => g.ui.toggleHud());
+  document.querySelector('#goal-bar').addEventListener('click', () => g.ui.editGoal());
+  document.querySelector('#goal-bar').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); g.ui.editGoal(); }
+  });
   document.addEventListener('pointerdown', (e) => {
     if (!document.body.classList.contains('hud-open')) return;
     if (e.target.closest('#hud, #btn-hud')) return;

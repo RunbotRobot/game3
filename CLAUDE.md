@@ -12,8 +12,13 @@ Work on branch `claude/ai-game-api-tools-jia4zw`.
    shape of `state` destructively: bump `STATE_VERSION` in `src/state.js` and append a
    migration to `MIGRATIONS`. Never edit an existing migration. `deepDefault` backfills
    new keys automatically, so adding fields is free; renaming and removing are not.
+   The v4→v5 migration is a one-time, explicitly-requested exception (the player asked
+   to start over) that replaces the whole state — that pattern exists for exactly that
+   ask, not as a template for a routine migration. Don't reach for it casually.
 2. **No build step, no dependencies.** Plain ES modules served over static HTTP. If you
-   find yourself wanting a bundler, don't.
+   find yourself wanting a bundler, don't. This extends to the 3D renderer: `engine3d.js`
+   is hand-rolled WebGL — no Three.js, no CDN import, even though it would be less code.
+   A `<script src="cdn...">` is still a dependency; it just hides where it lives.
 3. **The model never executes code.** It mutates the world only through the op language
    in `src/state.js` (`applyOps`). Unknown ops are ignored on purpose — that is what
    makes an old save loadable by new code and vice versa. Keep paths confined to
@@ -59,10 +64,36 @@ Mechanic-private state goes in `g.mech('id')`, which is persisted — so it must
 JSON-safe (no `Set`, `Map`, DOM nodes, or class instances; use arrays and plain objects).
 
 A good new mechanic **changes what the player's hands do**, not just what the HUD shows.
-`deck` (you play cards instead of typing), `grid` (arrows move you for free, only
-unmapped ground costs a turn), and `rig` (the model draws the mechanism as touchable
-marks over the scene instead of describing it) are the bar. A new meter is not a new
-mechanic.
+`deck` (you play cards instead of typing), `walk` (a 3D room you move an avatar through
+with a thumbstick), and `rig` (the model draws the mechanism as touchable marks over the
+scene instead of describing it) are the bar. A new meter is not a new mechanic.
+
+## The three pillars
+
+The player asked, explicitly, for the game to stop being an abstract dream that
+accumulated mysteries it never explained. Three things exist to hold that line, and a
+future rewrite should be reluctant to remove any of them:
+
+- **`walk`** (`src/mechanics/walk.js`, renderer in `src/engine3d.js`) — a hand-rolled
+  WebGL 3D room the player walks with a joystick, replacing typed/tapped travel as the
+  default. The model authors geography via `world.walkPlaces.<id>` / `world.walkAt`,
+  the same delta-channel idiom `grid`/`nodes` already used for `world.map`/`world.places`.
+  Do not install `grid` or `nodes` alongside it — same feature, worse fit for what the
+  player asked for. `grid`/`nodes` still exist and still work; they're just not the default.
+- **`mysteries`** (`src/mechanics/mysteries.js`) — the loose-threads ledger. Every
+  unexplained fact the story introduces (the 47 tally marks that never got an answer is
+  the example that prompted this) must be registered via `world.mysteryOpen.<id>` in the
+  same reply that introduces it, and resolved via `world.mysteryResolved.<id>` once the
+  story earns the answer. The HUD title shows the open count even collapsed.
+- **`player.goal`** — a plain string, not a mechanic (so it can't be uninstalled). Always
+  visible in the goal bar under the drift rail. The player can set or overwrite it
+  directly by tapping it; the model reads it from `digest()` every turn and can update it
+  as the story develops. An empty goal is a prompt for the model to help find one soon.
+
+Pacing is temporarily fast (`FAST_ARC_TUNING` in `src/state.js`, `drift.threshold` starts
+at 6) so a full arc can be felt in one sitting while it's being tuned. Raise `initial` and
+`cap` back toward their old values (14 and 46) once the shape feels right — that's the
+whole knob.
 
 ## This is played on a phone
 
@@ -71,7 +102,7 @@ Portrait, touch, no keyboard. Assume that when you add anything:
 - Nothing interactive may live only in a hover, a keypress, or a desktop-width layout.
   `#hud` was `display:none` under 760px once, which silently made the card hand and the
   travel list unplayable. If a mechanic gives a keyboard control, give it an on-screen
-  control too (see the d-pad in `grid.js`).
+  control too (see the joystick in `walk.js`, or the d-pad in `grid.js`).
 - Tap targets ≥ 32px, `#input` at 16px or Android zooms on focus, `dvh` not `vh`, and
   `env(safe-area-inset-bottom)` on anything at the bottom.
 - Canvas overlays are suppressed under 620px wide — on a phone they just fight the text.
@@ -95,7 +126,12 @@ Portrait, touch, no keyboard. Assume that when you add anything:
 - `src/llm.js` — providers. The only file that touches `fetch`. `ask()` walks a fallback
   chain (retry → another model → another provider) and heals retired model ids. Keys are
   per provider in `localStorage`, deliberately not in the save.
+- `src/engine3d.js` — the hand-rolled WebGL renderer `walk.js` draws with: mat4/vec3
+  math, a box mesh, a procedural grid-floor shader. No face culling (see the comment in
+  the file) — the scene is small enough that it isn't worth reasoning about winding order.
 - `src/ui/stage.js` — the particle field; `MOTION` maps the model's mood word to physics.
+  Hidden (not removed) while `walk` is installed — `#scene3d` takes over the same
+  full-bleed background layer, since a canvas can't hold two kinds of context.
 - `src/ui/index.js` — log (sticky-bottom scrolling), HUD, floating fragments. Fragments are turn-scoped: `ttl` counts
   down once per completed turn, `sticky` exempts one (only the rewrite nudge uses it).
   Anything the player can put on screen must also be removable by the player.
@@ -107,7 +143,7 @@ There is no test suite; verify in a real browser. Note that anything you change 
 implement — say so, and give them the manual command.
 
 ```sh
-python3 -m http.server 8099 &
+python3 serve.py 8099 &
 # drive it with playwright-core against /opt/pw-browsers/chromium-1194/chrome-linux/chrome
 ```
 
@@ -116,3 +152,9 @@ Boot with the offline provider (`local`), play a few turns, force an upheaval by
 `(await import('/src/mechanics/index.js')).install(window.game, id, {})`, then reload and
 confirm the save rehydrates. `window.game` is exposed for exactly this. Check the console
 is clean, and take a screenshot — canvas overlays must not land under the HUD column.
+
+Headless Chromium needs software WebGL flags to render `walk`'s 3D scene at all —
+`--use-gl=angle --use-angle=swiftshader --enable-webgl --ignore-gpu-blocklist
+--disable-gpu-sandbox` on `chromium.launch()`. Without them `canvas.getContext('webgl2')`
+returns `null` and the mechanic degrades to text-only (by design — see `install()` in
+`walk.js`), which looks like nothing is wrong until you check for the system message.

@@ -125,6 +125,42 @@ export function createUI(g) {
       $('#clock').textContent = `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}`;
     },
 
+    // --- the goal bar --------------------------------------------------------
+    // Always visible — never folded into the HUD strip — because the whole
+    // point is that the player always knows what they're playing toward. The
+    // player can set or overwrite it directly; the model reads it every turn
+    // from systemPrompt() and can update it too as the story develops.
+    renderGoal() {
+      const bar = $('#goal-bar');
+      const text = String(g.state.player.goal || '').trim();
+      bar.classList.toggle('empty', !text);
+      $('#goal-text').textContent = text || 'tap to choose a goal';
+    },
+
+    editGoal() {
+      const bar = $('#goal-bar');
+      if (bar.querySelector('#goal-input')) return;
+      const current = String(g.state.player.goal || '');
+      const input = el('input', { id: 'goal-input', type: 'text', value: current, maxlength: 140 });
+      bar.replaceChildren(el('span', { id: 'goal-label', text: 'goal' }), input);
+      input.focus();
+      input.select();
+      const commit = () => {
+        g.state.player.goal = input.value.trim().slice(0, 140);
+        g.save();
+        bar.replaceChildren(el('span', { id: 'goal-label', text: 'goal' }), el('span', { id: 'goal-text' }));
+        ui.renderGoal();
+      };
+      input.addEventListener('keydown', (e) => {
+        // Without stopPropagation, Enter/Space bubbles to #goal-bar's own
+        // activation handler and immediately reopens the editor it was just
+        // committed to close.
+        if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); input.blur(); }
+        if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); input.value = current; input.blur(); }
+      });
+      input.addEventListener('blur', commit, { once: true });
+    },
+
     // --- the apparatus overlay ----------------------------------------------
     renderRig() {
       const parts = active(g).flatMap((m) => { try { return m.render?.(g) || []; } catch { return []; } });

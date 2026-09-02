@@ -4,7 +4,13 @@
 
 export const SAVE_KEY = 'game3.save';
 export const KEY_KEY = 'game3.apikey';
-export const STATE_VERSION = 4;
+export const STATE_VERSION = 5;
+
+// Temporary: pressure fills fast so eras cycle in minutes, not hours, while
+// the shape of the game's arc is still being tuned. Once that shape feels
+// right, raise INITIAL and CAP back toward their old values (14 and 46) —
+// that's the whole knob, nowhere else needs to change.
+export const FAST_ARC_TUNING = { initial: 6, cap: 20, growth: 1.25 };
 
 export function freshState() {
   return {
@@ -13,22 +19,24 @@ export function freshState() {
     era: {
       index: 1,
       name: 'The Waking',
-      tagline: 'you do not remember choosing this',
+      tagline: 'you know exactly where you are, and exactly why that is strange',
       palette: { bg: '#0b0d10', fg: '#d7dce3', accent: '#7fd1c1' },
       motion: 'drift',
-      interfaceDirective: 'Plain prose. The world answers in full sentences.',
-      mechanics: ['resources'],
+      interfaceDirective: 'Concrete prose: named places, named things, a body that moves through a real '
+        + 'room. The player walks it instead of reading past it — see the walk mechanic.',
+      mechanics: ['walk', 'mysteries'],
     },
     player: {
       name: 'you',
       description: 'unwritten',
+      goal: '',   // plain string — the player can set it directly (tap the goal bar); the model can too
       inventory: [],
       stats: {},
       resources: { clarity: 7 },
     },
     world: {},
     mech: {},   // per-mechanic private state, keyed by mechanic id
-    drift: { pressure: 0, threshold: 14, upheavals: [] },
+    drift: { pressure: 0, threshold: FAST_ARC_TUNING.initial, upheavals: [] },
     floaters: [],
     transcript: [],
     settings: { provider: 'gemini', model: '', temperature: 1.0 },
@@ -64,7 +72,33 @@ const MIGRATIONS = [
     s.meta.evolutions.push('Added the rig mechanic: the apparatus is drawn as touchable marks over the scene instead of described in prose, and default narration is shorter throughout.');
     return s;
   },
-  // v4 -> v5 goes here
+  // v4 -> v5: an intentional reset, requested by the player, not the usual
+  // additive migration. The abstract, mystery-accumulating default (drift
+  // through installable mechanics, 2D top-down travel) is replaced with a
+  // concrete one: a hand-rolled 3D scene walked with a joystick, a visible
+  // goal, and a loose-threads ledger that forces every unexplained thing to
+  // eventually get an answer. This is the one case where replacing the whole
+  // state is correct rather than a bug — carry forward only what isn't
+  // narrative: the evolution history (so the game still remembers what it has
+  // been) and the player's provider/model choice (a config preference, not
+  // part of the story).
+  (s) => {
+    const evolutions = s.meta?.evolutions || [];
+    const provider = s.settings?.provider || 'gemini';
+    const model = s.settings?.model || '';
+    const reset = freshState();
+    reset.meta.evolutions = [...evolutions,
+      'Reset at the player\'s request: the game had grown too abstract and dream-like, with mysteries '
+      + '(47 tally marks, and others) that were never on track to be explained. Replaced the default '
+      + 'mechanics with a concrete world: a hand-rolled WebGL 3D scene walked with a joystick instead of '
+      + 'typed travel, a visible player-or-model-set goal, and a loose-threads ledger (the mysteries '
+      + 'mechanic) that requires every unexplained thing to eventually be resolved. Pacing is temporarily '
+      + 'much faster (drift threshold 14 -> 6) so the shape of a full arc can be felt sooner.'];
+    reset.settings.provider = provider;
+    reset.settings.model = model;
+    return reset;
+  },
+  // v5 -> v6 goes here
 ];
 
 export function migrate(state) {

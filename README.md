@@ -1,15 +1,18 @@
 # game3
 
-A text game that does not stay one game.
+A game that does not stay one game — narrated by a language model, walked in 3D.
 
-You type what you do. A language model narrates, and — crucially — is allowed to
-change the machinery you are playing with: install a grid, deal you a hand of cards,
-start a clock, take your inventory away. Every so often the accumulated pressure tips
-over and the whole thing becomes a different kind of game, grown out of what already
-happened. Once an hour it asks to be rewritten, and hands you a prompt to paste at
-Claude so the *code* changes too.
+You move through a hand-rolled WebGL room with a thumbstick; a language model narrates
+what happens and — crucially — is allowed to change the machinery you're playing with:
+deal you a hand of cards, start a clock, reshape the room itself. Every so often the
+accumulated pressure tips over and the whole thing becomes a different kind of game,
+grown out of what already happened — but two things hold steady underneath that churn:
+a visible goal, and a ledger that makes sure everything strange eventually gets an
+answer. Once an hour it asks to be rewritten, and hands you a prompt to paste at Claude
+so the *code* changes too.
 
-Single player. No server. No build step.
+Single player. No server (beyond serving static files). No build step, no dependencies
+— the 3D renderer is hand-written WebGL, not a library.
 
 ## Running it
 
@@ -67,11 +70,12 @@ This is a personal, local toy — don't host it publicly with a key in it.
 
 ## On a phone
 
-This is built to be played on one. The HUD is a scrolling strip above the composer
-— several mechanics live in it, so it is never hidden — and the **▤** button pulls it
-up into a full sheet you can play from. The grid mechanic has an on-screen d-pad as
-well as arrow keys. The composer does not steal focus after a turn, so the keyboard
-stays down until you ask for it. Add it to your home screen and it runs fullscreen.
+This is built to be played on one. The 3D room and its thumbstick are the primary way
+you move — no keyboard needed. The HUD is a scrolling strip above the composer — several
+mechanics live in it, so it is never hidden — and the **▤** button pulls it up into a
+full sheet you can play from. The composer does not steal focus after a turn, so the
+keyboard stays down until you ask for it. Add it to your home screen and it runs
+fullscreen.
 
 The server has to run somewhere your phone can reach it — a machine on the same
 network (`./play.sh`, then browse to that machine's LAN address), or any static host.
@@ -86,11 +90,21 @@ bypassed *before* reloading, so the reload starts from fresh copies.
 
 ## Playing
 
-- Type anything. The suggested actions are suggestions, not a menu.
+- **Move with the thumbstick**, lower-left. You have a body — a small figure standing
+  on a real, lit floor — and walking it into a labelled doorway is how you travel; no
+  typing required for that. WASD/arrow keys work too, for testing at a desk.
+- **The goal bar**, under the header, is always visible. Tap it to set or change what
+  you're playing toward — the model reads it every turn and can update it as the story
+  develops, but it's yours to write.
+- **Loose threads** (⚙-adjacent HUD panel) is a running ledger: every unexplained thing
+  the story introduces gets a question here, and stays until the story answers it. The
+  open count shows even when the HUD strip is collapsed.
+- Type anything, too — the suggested actions are suggestions, not a menu.
 - The thin rail under the header is **drift pressure**. When it fills, the game
-  upheaves into a new era: new palette, new prose rules, new mechanics.
-- Mechanics announce themselves with `⟡`. When `grid` is installed, arrow keys move
-  you for free — only stepping onto unmapped ground spends a turn.
+  upheaves into a new era: new palette, new prose rules, new mechanics. It fills fast
+  right now (a deliberate, temporary setting — see `FAST_ARC_TUNING` in `src/state.js`)
+  so a full arc can be felt in one sitting.
+- Mechanics announce themselves with `⟡`.
 - **evolve** builds the prompt you paste at Claude to change the source. The button
   starts glowing after an hour of play.
 - **Scroll up and the game waits.** The log only follows along while you are already
@@ -135,10 +149,12 @@ src/llm.js          providers; the only file that knows about HTTP
 src/prompt.js       what the model is told it is
 src/director.js     drift pressure and upheaval
 src/evolve.js       the hourly rewrite nudge, the evolution prompt, settings, rewrite watcher
+src/engine3d.js     hand-rolled WebGL: mat4/vec3 math, box mesh, the grid-floor shader
 version.json        the published build; polled by the running game
 src/build.js        the build baked into the running code — mismatch means a stale cache
 play.sh             serve + auto-pull
 serve.py            static server that refuses to let the browser cache stale code
 src/mechanics/      one file per way of playing — the seam the game changes through
-src/ui/             log, HUD, floating fragments, canvas stage
+                    (walk.js and mysteries.js are the two the game shouldn't be without)
+src/ui/             log, HUD, floating fragments, canvas stage, the goal bar
 ```

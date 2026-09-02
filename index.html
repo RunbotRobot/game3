@@ -8,6 +8,9 @@
 <link rel="stylesheet" href="./styles.css">
 
 <canvas id="stage"></canvas>
+<canvas id="scene3d" hidden></canvas>
+<div id="walk-labels" hidden></div>
+<div id="joystick" hidden><div id="joystick-knob"></div></div>
 <div id="floaters"></div>
 <div id="rig"></div>
 
@@ -29,6 +32,11 @@
 
   <div id="drift-rail" title="drift pressure — when it fills, the world upheaves">
     <div id="drift-fill"></div>
+  </div>
+
+  <div id="goal-bar" role="button" tabindex="0" title="tap to set or change your goal">
+    <span id="goal-label">goal</span>
+    <span id="goal-text">tap to choose a goal</span>
   </div>
 
   <section id="body">
