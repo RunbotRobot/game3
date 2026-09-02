@@ -50,3 +50,12 @@ append here so a later session can see what the game has already been.
   own typing opened; `focus()` only ever refused to *reopen* it after a turn. Submitting
   now blurs the input, and the viewport declares `interactive-widget=resizes-content` so
   supporting browsers size the layout around the keyboard correctly while it's up.
+- **Evolution — the apparatus, drawn.** Requested: more visuals, less text. Added `rig`,
+  a mechanic that draws the current mechanism as small touchable marks positioned over
+  the scene — the model places and moves them by writing `world.rig.<id>`, in the same
+  idiom `grid` and `nodes` already use for `world.map` and `world.places`. Tapping a part
+  touches it, dragging one pulls at it; both arrive as input in place of a typed sentence.
+  A `stage` (ok/strained/broken) and a `hot` flag carry urgency visually — no reading
+  required. Default narration length is cut to 1-2 short paragraphs throughout, and
+  mechanics are told not to re-describe what they already render. Also fixed a duplicated
+  "On a phone" section in README.md left over from an earlier edit.

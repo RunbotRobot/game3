@@ -63,6 +63,7 @@ async function submit(input, { silent = false } = {}) {
     g.state.transcript = g.state.transcript.slice(-120);
     g.ui.renderChoices(result.choices);
     g.ui.renderHud();
+    g.ui.renderRig();
 
     const ready = addPressure(g, text, result);
     g.ui.renderDrift();
@@ -96,6 +97,7 @@ function boot() {
 
   g.ui.renderEra();
   g.ui.renderHud();
+  g.ui.renderRig();
   g.ui.renderFloaters();
   g.ui.renderDrift();
   g.ui.renderClock();

@@ -47,6 +47,7 @@ export default {
   afterTurn(g) {},            // absorb whatever the model wrote into world.* into your own state
   hud(g) {},                  // -> HTMLElement | null  (use ui/dom.js: block/row/meter/el)
   draw(g, ctx, t, W, H) {},   // background canvas, under the text
+  render(g) {},               // -> HTMLElement[], absolutely positioned over #rig (see rig.js)
   keydown(g, e) {},           // -> true if consumed. Not called while an input is focused.
   composer(g) {},             // -> { placeholder }
 }
@@ -56,8 +57,10 @@ Mechanic-private state goes in `g.mech('id')`, which is persisted — so it must
 JSON-safe (no `Set`, `Map`, DOM nodes, or class instances; use arrays and plain objects).
 
 A good new mechanic **changes what the player's hands do**, not just what the HUD shows.
-`deck` (you play cards instead of typing) and `grid` (arrows move you for free, only
-unmapped ground costs a turn) are the bar. A new meter is not a new mechanic.
+`deck` (you play cards instead of typing), `grid` (arrows move you for free, only
+unmapped ground costs a turn), and `rig` (the model draws the mechanism as touchable
+marks over the scene instead of describing it) are the bar. A new meter is not a new
+mechanic.
 
 ## This is played on a phone
 

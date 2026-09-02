@@ -4,7 +4,7 @@
 
 export const SAVE_KEY = 'game3.save';
 export const KEY_KEY = 'game3.apikey';
-export const STATE_VERSION = 3;
+export const STATE_VERSION = 4;
 
 export function freshState() {
   return {
@@ -56,7 +56,15 @@ const MIGRATIONS = [
     s.meta.evolutions.push('Floating fragments now expire after a few turns, drag from where you grab them, and dismiss on click.');
     return s;
   },
-  // v3 -> v4 goes here
+  // v3 -> v4: no shape change — records the "more visuals, less text" evolution
+  // (the rig mechanic and a shorter default narration length) in the log.
+  (s) => {
+    s.meta = s.meta || {};
+    s.meta.evolutions = s.meta.evolutions || [];
+    s.meta.evolutions.push('Added the rig mechanic: the apparatus is drawn as touchable marks over the scene instead of described in prose, and default narration is shorter throughout.');
+    return s;
+  },
+  // v4 -> v5 goes here
 ];
 
 export function migrate(state) {

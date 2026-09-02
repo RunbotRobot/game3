@@ -99,26 +99,10 @@ bypassed *before* reloading, so the reload starts from fresh copies.
   has a **hold it** button, and pauses while the tab is in the background.
 - Floating fragments last a few turns. Tap one to dismiss it, drag to move it,
   press **esc** or use ⚙ → clear fragments to sweep them all.
+- When `rig` is installed, the mechanism is drawn as small marks over the scene
+  instead of described in prose — tap one to touch it, drag one to pull at it.
+  A pulsing mark is the one the story wants your eye on.
 - Everything autosaves to `localStorage`; ⚙ can export/import a save as JSON.
-
-## On a phone
-
-This is built to be played on one. The HUD is a scrolling strip above the composer
-— several mechanics live in it, so it is never hidden — and the **▤** button pulls it
-up into a full sheet you can play from. The grid mechanic has an on-screen d-pad as
-well as arrow keys. The composer does not steal focus after a turn, so the keyboard
-stays down until you ask for it. Add it to your home screen and it runs fullscreen.
-
-The server has to run somewhere your phone can reach it — a machine on the same
-network (`./play.sh`, then browse to that machine's LAN address), or any static host.
-
-**On GitHub Pages** there is nothing to pull: a push is the deploy. The catch is that
-Pages serves assets with a ten-minute `max-age`, so a plain reload can hand the browser
-back the same code you are trying to replace — and on a phone there is no convenient
-hard-reload. The game handles this itself: `src/build.js` carries the build baked into
-the running JavaScript, `version.json` carries the published one, and when they disagree
-the header says so. Pressing **rewritten ⟳** re-requests every file with the cache
-bypassed *before* reloading, so the reload starts from fresh copies.
 
 ## Playing while it is being rewritten
 

@@ -6,6 +6,7 @@ export function createUI(g) {
   const logEl = $('#log'), hudEl = $('#hud'), choicesEl = $('#choices');
   const inputEl = $('#input'), statusEl = $('#status'), modal = $('#modal');
   const floatersEl = $('#floaters');
+  const rigEl = $('#rig');
   const stage = createStage(g, $('#stage'));
 
   const jumpEl = $('#btn-jump');
@@ -122,6 +123,12 @@ export function createUI(g) {
     renderClock() {
       const m = Math.floor(g.state.meta.playMs / 60000);
       $('#clock').textContent = `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}`;
+    },
+
+    // --- the apparatus overlay ----------------------------------------------
+    renderRig() {
+      const parts = active(g).flatMap((m) => { try { return m.render?.(g) || []; } catch { return []; } });
+      rigEl.replaceChildren(...parts);
     },
 
     // --- floating fragments -------------------------------------------------

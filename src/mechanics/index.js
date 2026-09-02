@@ -10,9 +10,10 @@ import timer from './timer.js';
 import deck from './deck.js';
 import grid from './grid.js';
 import nodes from './nodes.js';
+import rig from './rig.js';
 
 export const MECHANICS = Object.fromEntries(
-  [resources, inventory, stats, timer, deck, grid, nodes].map((m) => [m.id, m]),
+  [resources, inventory, stats, timer, deck, grid, nodes, rig].map((m) => [m.id, m]),
 );
 
 /** A short menu the model reads, so it knows what it is allowed to become. */
