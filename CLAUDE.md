@@ -81,12 +81,18 @@ future rewrite should be reluctant to remove any of them:
   Do not install `grid` or `nodes` alongside it — same feature, worse fit for what the
   player asked for. `grid`/`nodes` still exist and still work; they're just not the default.
   A few things about it are load-bearing, not incidental:
-  - **Steering, not camera-relative input.** Left/right turns the avatar directly (heading
-    is sticky between joystick pushes); up/down moves along whatever it's currently facing.
-    The first version rotated the raw stick input by the camera's own yaw instead — since
+  - **Steering, not camera-relative input, from either stick.** Left/right on the move
+    stick turns the avatar directly (heading is sticky between pushes); up/down moves along
+    whatever it's currently facing. The right (view) stick's left/right also turns the
+    avatar — same direct math, a second way to nudge heading, not a separate camera-only
+    concept — because "which way I'm looking" and "which way I'm facing" being different
+    things made the two joysticks feel unrelated instead of one control. The chase camera
+    has no independent yaw of its own: it only ever lerps toward `a.heading`. The first
+    movement version rotated the raw stick input by the camera's own yaw instead — since
     the camera chases the avatar's heading, that fed back on itself and turned "hold right"
-    into a runaway spin rather than a turn that settles. If you touch movement, keep heading
-    updates direct and linear in the input, never derived from a value the camera itself lags.
+    into a runaway spin rather than a turn that settles. If you touch movement or the view
+    stick, keep heading updates direct and linear in the input, never derived from a value
+    the camera itself lags.
   - **Every prop needs a real `y`.** `engine3d.js`'s box renderer requires `{x,y,z,...}` —
     a prop object with no `y` produces `NaN` in its model matrix and WebGL just silently
     drops it, no JS error. `expandProp()`/the shape kits are what supply it now; don't start

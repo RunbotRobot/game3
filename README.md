@@ -96,11 +96,13 @@ bypassed *before* reloading, so the reload starts from fresh copies.
   isn't a permanent slice of the screen anymore; it collapses into a peek bar under the
   goal bar (an icon and the latest line) and opens into a full sheet when you tap it.
   Tapping the room again, or a real action (sending a line, picking a choice), closes it.
-- **Steer with the left thumbstick.** Left/right turns you; up/down walks forward or back
-  along wherever you're currently facing — so holding "up" keeps going the way you're
-  already pointed, it doesn't reset to some fixed direction. **The right thumbstick looks**
-  around independently, without turning your body — let go and it re-centers behind
-  whichever way you're facing. WASD/arrow keys work too, for testing at a desk.
+- **Steer with either thumbstick** — they're one control, not two. Left/right on the left
+  stick turns you; up/down walks forward or back along wherever you're currently facing,
+  so holding "up" keeps going the way you're already pointed rather than resetting to some
+  fixed direction. The right stick also turns you, the same way — handy for fine-tuning
+  which way you're facing with your other thumb while the left stick keeps you moving. The
+  camera always settles in behind wherever you end up facing. WASD/arrow keys work too,
+  for testing at a desk.
 - **Tap something to find out what it is.** Labels are hidden by default — the shape is
   the first thing you're told, the name only when you ask for it. Tap an object (or the
   glowing floor marker at a doorway) and its label appears for a few seconds.

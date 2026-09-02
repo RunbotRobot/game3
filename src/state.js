@@ -4,7 +4,7 @@
 
 export const SAVE_KEY = 'game3.save';
 export const KEY_KEY = 'game3.apikey';
-export const STATE_VERSION = 6;
+export const STATE_VERSION = 7;
 
 // Temporary: pressure fills fast so eras cycle in minutes, not hours, while
 // the shape of the game's arc is still being tuned. Once that shape feels
@@ -107,7 +107,16 @@ const MIGRATIONS = [
       + 'independently of which way you\'re walking.');
     return s;
   },
-  // v6 -> v7 goes here
+  // v6 -> v7: no shape change — records the "the joysticks act as one control" fix.
+  (s) => {
+    s.meta = s.meta || {};
+    s.meta.evolutions = s.meta.evolutions || [];
+    s.meta.evolutions.push('The right (view) joystick now turns the avatar itself, the same as the left '
+      + 'stick\'s left/right already did, instead of free-rotating an independent camera — the two sticks '
+      + 'are meant to be one control, not two unrelated ones.');
+    return s;
+  },
+  // v7 -> v8 goes here
 ];
 
 export function migrate(state) {

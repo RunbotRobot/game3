@@ -259,8 +259,8 @@ function expandProp(p) {
 
 const AVATAR_RADIUS = 0.4;
 const SPEED = 4.2;       // metres/second
-const TURN_RATE = 2.6;         // radians/second at full stick deflection (avatar)
-const CAMERA_TURN_RATE = 3.2;  // radians/second at full stick deflection (look)
+const TURN_RATE = 2.6;       // radians/second at full stick deflection (move stick, left/right)
+const VIEW_TURN_RATE = 3.2;  // radians/second at full stick deflection (view stick)
 const REVEAL_MS = 3500;
 
 function createScene(g) {
@@ -381,16 +381,20 @@ function createScene(g) {
       a.x = nx; a.z = nz;
     }
 
-    // Third-person chase camera. The right stick free-rotates it around the
-    // avatar (a look, not a move — nothing here ever touches a.heading or
-    // position, so this can't reopen the feedback loop the move stick had);
-    // let go and it re-centers behind whichever way the avatar is facing.
+    // The view stick is a second way to turn the avatar, not a separate
+    // camera-only concept — the two sticks only cohere as a pair once "which
+    // way I'm looking" and "which way I'm facing" are the same thing. Same
+    // direct-steering math as the move stick's left/right (raw stick input,
+    // never derived from the camera's own angle, so this can't reopen the
+    // feedback loop a camera-relative turn caused earlier in this file).
     const viewMag = Math.hypot(viewStick.vector.x, viewStick.vector.z);
     if (viewMag > 0.15 && !g.busy) {
-      cameraYaw = wrapAngle(cameraYaw + (viewStick.vector.x / viewMag) * Math.min(1, viewMag) * CAMERA_TURN_RATE * dt);
-    } else {
-      cameraYaw = lerpAngle(cameraYaw, a.heading, Math.min(1, dt * 6));
+      a.heading = wrapAngle(a.heading + (viewStick.vector.x / viewMag) * Math.min(1, viewMag) * VIEW_TURN_RATE * dt);
     }
+
+    // Third-person chase camera: always settles directly behind wherever the
+    // avatar is currently facing, smoothed so a turn doesn't snap the view.
+    cameraYaw = lerpAngle(cameraYaw, a.heading, Math.min(1, dt * 6));
     const back = 6.5, height = 4.2;
     const eye = [a.x - Math.sin(cameraYaw) * back, height, a.z + Math.cos(cameraYaw) * back];
     const target = [a.x, 1.1, a.z];

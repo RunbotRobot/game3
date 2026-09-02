@@ -157,3 +157,13 @@ append here so a later session can see what the game has already been.
   which is `display:none` until opened — the sheet was toggling with nothing visible
   behind it. `toggleHud()` now brings the drawer along when opening the HUD in walk-active
   mode. `STATE_VERSION` 5 → 6, no shape change, logs this entry.
+- **Fix — the two joysticks didn't cohere.** The right stick shipped as a free-look camera,
+  decoupled from `a.heading` on purpose (to avoid reopening the earlier feedback-loop bug).
+  Requested correction: that made the two sticks feel unrelated rather than a pair — "look"
+  and "which way I'm facing" should be the same thing. The right stick now turns
+  `a.heading` directly, with the identical direct-steering math the left stick's left/right
+  already used (raw stick input, never derived from the camera's own angle — still no
+  feedback loop, since neither stick reads a value the camera itself lags). The chase
+  camera dropped its separate free-rotate/re-center branch and just always settles behind
+  wherever `a.heading` currently points. `#joystick-view`'s tooltip changed from "look" to
+  "turn" to match. `STATE_VERSION` 6 → 7, no shape change, logs this entry.

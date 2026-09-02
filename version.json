@@ -1,4 +1,4 @@
 {
-  "build": "2026-09-02.14",
-  "note": "the room is the screen now — log/HUD/composer collapse to a tap-to-open drawer, and a second joystick free-looks the camera"
+  "build": "2026-09-02.15",
+  "note": "the right joystick now turns the avatar itself instead of just the camera — the two sticks act as one control"
 }
