@@ -19,7 +19,11 @@ export function el(spec, props = {}, ...children) {
 }
 
 export function block(title, ...children) {
-  return el('div.hud-block', {}, el('div.hud-title', { text: title }), ...children);
+  // Children live in .hud-body so the phone-width strip can collapse to just the
+  // title (one CSS rule hides the wrapper) without every mechanic's hud() having
+  // to know about that. Full content still shows in the sidebar and the pulled-up
+  // sheet — see #hud in styles.css.
+  return el('div.hud-block', {}, el('div.hud-title', { text: title }), el('div.hud-body', {}, ...children));
 }
 
 export function row(label, value) {

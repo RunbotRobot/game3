@@ -30,12 +30,15 @@ export default {
   hud: (g) => {
     const s = g.mech('timer');
     const held = s.paused || g.ui.reading;
+    const countdown = held ? 'held' : `${s.left}s`;
     const wrap = document.createElement('div');
-    wrap.append(row(s.label, held ? 'held' : `${s.left}s`), meter(s.left / s.seconds));
+    wrap.append(row(s.label, countdown), meter(s.left / s.seconds));
     wrap.append(el('button', {
       style: { marginTop: '8px' },
       onClick: () => { s.paused = !s.paused; g.ui.renderHud(); g.save(); },
     }, s.paused ? 'let it run' : 'hold it'));
-    return block('pressure', wrap);
+    // The countdown is time-critical, so it rides in the title too — the one
+    // piece of a block that stays visible when the phone strip is collapsed.
+    return block(`pressure · ${countdown}`, wrap);
   },
 };

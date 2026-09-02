@@ -45,7 +45,9 @@ export default {
   prompt(g) {},               // -> string injected into the system prompt. Say how to drive it.
   beforeTurn(g) {},           // -> string appended to this turn's user message (e.g. a die roll)
   afterTurn(g) {},            // absorb whatever the model wrote into world.* into your own state
-  hud(g) {},                  // -> HTMLElement | null  (use ui/dom.js: block/row/meter/el)
+  hud(g) {},                  // -> HTMLElement | null  (use ui/dom.js: block/row/meter/el —
+                               //    on a phone only block()'s title stays visible until the
+                               //    sheet is opened; put anything time-critical in the title)
   draw(g, ctx, t, W, H) {},   // background canvas, under the text
   render(g) {},               // -> HTMLElement[], absolutely positioned over #rig (see rig.js)
   keydown(g, e) {},           // -> true if consumed. Not called while an input is focused.

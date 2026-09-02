@@ -108,6 +108,11 @@ function boot() {
   }
 
   document.querySelector('#hud').addEventListener('click', (e) => {
+    // Collapsed strip: nothing in it is interactive (.hud-body is hidden), so
+    // any tap means "show me the detail." Open sheet: let a real action (a
+    // travel destination, a played card, hold-it) close it again after firing;
+    // tapping empty space or a title leaves it open.
+    if (!document.body.classList.contains('hud-open')) { g.ui.toggleHud(true); return; }
     if (e.target.closest('button')) g.ui.toggleHud(false);
   });
 

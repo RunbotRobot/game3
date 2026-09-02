@@ -59,3 +59,14 @@ append here so a later session can see what the game has already been.
   required. Default narration length is cut to 1-2 short paragraphs throughout, and
   mechanics are told not to re-describe what they already render. Also fixed a duplicated
   "On a phone" section in README.md left over from an earlier edit.
+- **Fix — the phone strip was still too tall, and a long era name overlapped the header.**
+  A real-device screenshot (Brave, which keeps its own persistent chrome the earlier
+  viewport tests didn't account for) showed the log still cut to ~4 lines even with the
+  keyboard closed — the always-expanded HUD strip (up to 132px per block) plus choices
+  plus composer simply cost more than the budget allowed. The strip now shows only each
+  block's title (a `block()` change in `ui/dom.js` wraps content in `.hud-body`, hidden
+  under 760px until the sheet is pulled up); tapping anywhere on the collapsed strip opens
+  it. `timer` puts its live countdown in the title text itself, since that's the one
+  time-critical thing that can't wait for a tap. Also: `#era-name` had no line-clamp, so a
+  long title wrapped to two lines and the second line ran under the baseline-aligned clock
+  and buttons — it's now single-line with an ellipsis on phone widths.

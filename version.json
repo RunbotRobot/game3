@@ -1,4 +1,4 @@
 {
-  "build": "2026-09-02.9",
-  "note": "the apparatus is drawn now, not described: a new mechanic to touch and pull instead of read"
+  "build": "2026-09-02.10",
+  "note": "the HUD strip collapses to titles only; a long era name no longer wraps into the header"
 }
