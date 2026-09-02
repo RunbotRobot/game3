@@ -96,3 +96,26 @@ append here so a later session can see what the game has already been.
   - `STATE_VERSION` 4 → 5: an intentional, explicitly-requested full reset (not the usual
     additive migration) — carries forward only the evolution history and the provider/model
     choice. Documented in `CLAUDE.md` as a one-time pattern, not a template.
+- **Fix — steering, a face, a real pane, and models instead of blocks.** Four requests,
+  and the first two hid a genuine bug each: props had no `y` coordinate at all
+  (`mat4.translate(x, undefined, z)`), so every prop in the walked world had been
+  silently invisible — no JS error, WebGL just discards NaN geometry. Fixed by giving
+  every prop a shape kit (`box`, `pillar`, `table`, `chest`, `shelf`, `lamp`, `tree`,
+  `person`) that expands it into a few correctly-placed sub-boxes instead of one
+  undifferentiated block — which is also the "3D models to go with the labels" ask.
+  Movement: the first attempt at "up means forward, not always north" rotated the stick
+  input by the camera's own yaw — which chases the avatar's heading, so holding a turn
+  fed back on itself into a continuous spin (heading hit 8.8 radians, several full turns,
+  holding "right" for a bit over a second). Replaced with direct steering: left/right
+  turns the avatar, up/down moves along whatever it's already facing — heading is sticky
+  between pushes, no loop, verified against all four compass directions. Player and NPC
+  ("person" shape) now share one humanoid box-kit with two eye-boxes on the front and a
+  hair cap on the back, so facing is readable without a HUD arrow. Labels are hidden until
+  tapped (a `walk-hotspot` per object, sized from its on-screen projected footprint, fading
+  after ~3.5s) — caught two more bugs writing the test for this: the label text was never
+  actually being set (every label showed empty), and when a bigger marker (an exit) visually
+  overlapped a smaller one (a prop), the bigger one always won the tap regardless of which
+  was in front — fixed by giving the smaller footprint a higher z-index. The room now takes
+  a dedicated top pane (`--scene-h` in styles.css) instead of sitting full-bleed behind
+  translucent text panels; the log/HUD/composer are solid-backed below it, not glass over
+  the world.

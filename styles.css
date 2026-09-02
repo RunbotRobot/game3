@@ -45,6 +45,16 @@ html, body {
   color: var(--fg); background: color-mix(in oklab, var(--bg) 60%, transparent);
   border: 1px solid color-mix(in oklab, var(--fg) 25%, transparent);
   backdrop-filter: blur(2px);
+  animation: floater-in .2s ease both;
+}
+/* The tap target for a prop or exit. Deliberately quiet — the object's own 3D
+   shape is the primary cue now; this is just a faint "something is here" ring,
+   sized per-frame in JS to roughly match the object's on-screen footprint. */
+.walk-hotspot {
+  position: absolute; top: 0; left: 0; border-radius: 50%;
+  border: 1px solid color-mix(in oklab, var(--fg) 20%, transparent);
+  pointer-events: auto; cursor: pointer;
+  touch-action: none; -webkit-tap-highlight-color: transparent;
 }
 
 /* The thumbstick: fixed low and to one side so it never competes with the
@@ -68,6 +78,31 @@ html, body {
   /* No blanket transition: it would lag a finger dragging the knob every
      frame. walk.js adds a short one only for the release snap-back. */
 }
+
+/* --- the 3D room gets its own pane, text is secondary --------------------
+   Previously the room was a full-bleed background with the log/HUD/composer
+   floating over it, translucent, the way the particle field still works for
+   text-only eras. For a real walkable room that reads as sharing the game's
+   own text-adventure reflex ("look past the words") instead of a place you
+   actually inhabit — so while `walk` is installed the room takes a fixed pane
+   at the top and the text pane below it is solid, not glass-over-video. */
+:root { --scene-h: min(56vh, calc(100dvh - 260px)); }
+
+body.walk-active #scene3d,
+body.walk-active #walk-labels { height: var(--scene-h); }
+
+body.walk-active #joystick { bottom: auto; top: calc(var(--scene-h) - 116px); }
+
+/* #shell's own padding-top pushes EVERYTHING inside it — topbar, goal bar,
+   drift rail, log, HUD, composer — below the scene pane as one group. That's
+   the whole fix: nothing needs its own fixed positioning to get out from
+   under the 3D view; it just isn't drawn there any more. */
+body.walk-active #shell { padding-top: var(--scene-h); }
+body.walk-active #body,
+body.walk-active #composer {
+  background: var(--bg);
+}
+body.walk-active #body { border-top: 1px solid var(--edge); }
 
 /* The apparatus overlay: parts the model places over the scene, touched or
    dragged directly instead of being described and then typed about. */

@@ -90,9 +90,20 @@ bypassed *before* reloading, so the reload starts from fresh copies.
 
 ## Playing
 
-- **Move with the thumbstick**, lower-left. You have a body — a small figure standing
-  on a real, lit floor — and walking it into a labelled doorway is how you travel; no
-  typing required for that. WASD/arrow keys work too, for testing at a desk.
+- **The room has its own pane**, top of the screen, separate from the log below it —
+  not a background behind the text. You have a body in it: a small figure, with a face
+  on the side it's walking toward and hair on the side facing you, standing on a real,
+  lit floor among objects that are actually shaped like what they are (a table has legs,
+  a tree has a trunk and a canopy), not undifferentiated blocks.
+- **Steer with the thumbstick**, lower-left, within the room's pane. Left/right turns
+  you; up/down walks forward or back along wherever you're currently facing — so holding
+  "up" keeps going the way you're already pointed, it doesn't reset to some fixed
+  direction. WASD/arrow keys work too, for testing at a desk.
+- **Tap something to find out what it is.** Labels are hidden by default — the shape is
+  the first thing you're told, the name only when you ask for it. Tap an object (or the
+  glowing floor marker at a doorway) and its label appears for a few seconds.
+- Walking into a labelled doorway is how you travel between places; no typing required
+  for that.
 - **The goal bar**, under the header, is always visible. Tap it to set or change what
   you're playing toward — the model reads it every turn and can update it as the story
   develops, but it's yours to write.

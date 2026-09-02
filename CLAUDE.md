@@ -80,6 +80,34 @@ future rewrite should be reluctant to remove any of them:
   the same delta-channel idiom `grid`/`nodes` already used for `world.map`/`world.places`.
   Do not install `grid` or `nodes` alongside it — same feature, worse fit for what the
   player asked for. `grid`/`nodes` still exist and still work; they're just not the default.
+  A few things about it are load-bearing, not incidental:
+  - **Steering, not camera-relative input.** Left/right turns the avatar directly (heading
+    is sticky between joystick pushes); up/down moves along whatever it's currently facing.
+    The first version rotated the raw stick input by the camera's own yaw instead — since
+    the camera chases the avatar's heading, that fed back on itself and turned "hold right"
+    into a runaway spin rather than a turn that settles. If you touch movement, keep heading
+    updates direct and linear in the input, never derived from a value the camera itself lags.
+  - **Every prop needs a real `y`.** `engine3d.js`'s box renderer requires `{x,y,z,...}` —
+    a prop object with no `y` produces `NaN` in its model matrix and WebGL just silently
+    drops it, no JS error. `expandProp()`/the shape kits are what supply it now; don't start
+    passing raw prop specs straight to `boxes:` again.
+  - **Props are shape kits, not one block.** `SHAPE_KITS` in `walk.js` (box/pillar/table/
+    chest/shelf/lamp/tree/person) each expand a prop's bounding w/h/d into a few correctly-
+    placed sub-boxes. `person` reuses the same `humanoidBoxes()` the player avatar is built
+    from, so an NPC reads as a relative of the player, not a stranger kind of block.
+  - **`localToWorld(cx, cz, ry, dx, dz)` is the one correct local-frame transform** — dx is
+    the object's own right, dz its own forward, verified against the camera's proven eye-
+    offset formula. Don't reintroduce the old arm-only `x+dx*cos, z-dx*sin` shortcut for
+    anything with a front/back distinction (a face, hair, a chest's lid) — it was never
+    validated for direction, only got away with it because arms are symmetric.
+  - **Labels are tap-to-reveal**, not always-on. Each prop/exit gets a `.walk-hotspot` sized
+    from its projected on-screen footprint; tapping it shows the `.walk-label` for a few
+    seconds. When two hotspots overlap (a big exit marker behind a small prop), the smaller
+    one must win the tap — `updateMark()` gives it the higher z-index for exactly this.
+  - **The room has its own pane** (`--scene-h` in `styles.css`, `body.walk-active`), not a
+    full-bleed background behind translucent text. `#shell`'s `padding-top` is what pushes
+    everything below the scene — don't reach for `position:fixed` on individual header
+    pieces to get them out from under it; that undoes the whole point.
 - **`mysteries`** (`src/mechanics/mysteries.js`) — the loose-threads ledger. Every
   unexplained fact the story introduces (the 47 tally marks that never got an answer is
   the example that prompted this) must be registered via `world.mysteryOpen.<id>` in the

@@ -1,4 +1,4 @@
 {
-  "build": "2026-09-02.11",
-  "note": "the reset: a hand-rolled 3D room you walk with a joystick, a goal bar, and a loose-threads ledger"
+  "build": "2026-09-02.12",
+  "note": "camera-relative steering, avatar face/hair, a dedicated 3D pane, and shaped props with tap-to-reveal labels"
 }
