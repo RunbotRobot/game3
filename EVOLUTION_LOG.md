@@ -119,3 +119,17 @@ append here so a later session can see what the game has already been.
   a dedicated top pane (`--scene-h` in styles.css) instead of sitting full-bleed behind
   translucent text panels; the log/HUD/composer are solid-backed below it, not glass over
   the world.
+- **Fix — limbs rotated the wrong way, independently of the body.** `mat4.rotateY` in
+  `engine3d.js` and `localToWorld()` in `walk.js` each encode "positive rotation" with
+  the opposite sign convention. `localToWorld` (which swings a part's *position* around
+  the body's pivot) had already been verified against the camera's own proven forward
+  vector; `rotateY` (which sets a part's own *orientation*) hadn't been checked the same
+  way, and disagreed with it. At heading 0 both are identity, so it was invisible in
+  every earlier screenshot and every earlier test — none of them turned the avatar and
+  looked at a rendered part's facing. The visible result: each box's center correctly
+  swung around the body as the avatar turned, but the box's own facing spun the opposite
+  way against that swing — read as limbs rotating independently, in reverse. Fixed by
+  flipping the sign in `rotateY` to match `localToWorld`, verified by rotating a box's
+  local front through the matrix at several headings and checking it lands on the same
+  point `localToWorld` already proved correct — not just checking where a part ends up,
+  which is what the previous tests did and why this got through.

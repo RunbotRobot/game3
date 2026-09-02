@@ -1,4 +1,4 @@
 {
-  "build": "2026-09-02.12",
-  "note": "camera-relative steering, avatar face/hair, a dedicated 3D pane, and shaped props with tap-to-reveal labels"
+  "build": "2026-09-02.13",
+  "note": "fixed a sign bug: avatar and prop parts now rotate rigidly, in the correct direction"
 }

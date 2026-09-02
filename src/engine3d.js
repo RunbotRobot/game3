@@ -33,8 +33,15 @@ const mat4 = {
   scaleXYZ: (x, y, z) => [x, 0, 0, 0, 0, y, 0, 0, 0, 0, z, 0, 0, 0, 0, 1],
 
   rotateY(rad) {
+    // Sign chosen to agree with walk.js's localToWorld(), not the other
+    // "equally valid" rotation direction: a box's ry must spin the same way
+    // its position swings around the body's pivot, or a rigid part looks like
+    // it's rotating in place against the body instead of with it. Verified
+    // against the proven-correct forward vector (sin h, -cos h) the camera
+    // itself uses — rotating a box's local front (0,0,-1) by this matrix has
+    // to land on that same point, not its mirror.
     const c = Math.cos(rad), s = Math.sin(rad);
-    return [c, 0, -s, 0, 0, 1, 0, 0, s, 0, c, 0, 0, 0, 0, 1];
+    return [c, 0, s, 0, 0, 1, 0, 0, -s, 0, c, 0, 0, 0, 0, 1];
   },
 
   perspective(fovyRad, aspect, near, far) {

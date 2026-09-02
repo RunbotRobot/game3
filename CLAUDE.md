@@ -100,6 +100,16 @@ future rewrite should be reluctant to remove any of them:
     offset formula. Don't reintroduce the old arm-only `x+dx*cos, z-dx*sin` shortcut for
     anything with a front/back distinction (a face, hair, a chest's lid) — it was never
     validated for direction, only got away with it because arms are symmetric.
+  - **`mat4.rotateY` in `engine3d.js` must agree with `localToWorld`'s sign, not just any
+    valid rotation matrix.** A box's world *position* swings around the body's pivot via
+    `localToWorld`; its own *orientation* comes separately from `rotateY(b.ry)`. Both are
+    individually "correct" rotation matrices in the abstract, but if their sign conventions
+    disagree, position and orientation spin in opposite senses — a rigid part reads as
+    rotating in place, backwards, against the body. They were built independently and did
+    disagree once already. At heading 0 both reduce to identity, so this is invisible unless
+    you actually turn something and check which way a part *faces*, not just where its
+    center ends up — check both together (compare a rotated box's local front against the
+    same forward vector the camera uses) if you ever touch either one.
   - **Labels are tap-to-reveal**, not always-on. Each prop/exit gets a `.walk-hotspot` sized
     from its projected on-screen footprint; tapping it shows the `.walk-label` for a few
     seconds. When two hotspots overlap (a big exit marker behind a small prop), the smaller
